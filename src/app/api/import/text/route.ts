@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+function json(data: unknown, init?: ResponseInit) {
+  return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
+export async function POST(req: NextRequest) {
+  const client = new Anthropic();
+  const { text } = await req.json();
+  if (!text) return json({ error: 'Text required' }, { status: 400 });
+
+  const message = await client.messages.create({
+    model: 'claude-opus-4-5',
+    max_tokens: 2048,
+    messages: [{
+      role: 'user',
+      content: `Parse this recipe text into structured JSON. Return ONLY a JSON object with these exact fields (no markdown, no explanation):
+{
+  "title": string,
+  "description": string or null,
+  "servings": number or null,
+  "total_time": string or null,
+  "cuisine": string or null,
+  "tags": string[],
+  "ingredients": [{"amount": string, "unit": string, "item": string, "notes": string or null}],
+  "steps": [{"order": number, "text": string}],
+  "notes": string or null
+}
+
+Recipe text:
+${text.slice(0, 8000)}`,
+    }],
+  });
+
+  const raw = (message.content[0] as { type: string; text: string }).text.trim();
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return json({ error: 'Could not parse recipe' }, { status: 422 });
+
+  try {
+    const recipe = JSON.parse(jsonMatch[0]);
+    recipe.source_type = 'text';
+    recipe.tags = recipe.tags || [];
+    recipe.ingredients = recipe.ingredients || [];
+    recipe.steps = recipe.steps || [];
+    return json({ recipe });
+  } catch {
+    return json({ error: 'Invalid recipe JSON' }, { status: 422 });
+  }
+}

@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..500&family=Work+Sans:wght@300..600&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Creaciones Colibrí palette */
+  --bg: #fdf8f3;
+  --card: #ffffff;
+  --border: #e8ddd5;
+  --text: #2f2b28;
+  --muted: #5c4a4a;
+  --accent: #f16745;
+  --accent-hover: #d45432;
+  --secondary: #1f8a70;
+  --secondary-hover: #186b57;
+  --gold: #f7ba2a;
+
+  /* Typography */
+  --font-display: 'Fraunces', 'Georgia', serif;
+  --font-body: 'Work Sans', 'Helvetica Neue', sans-serif;
+
+  /* Shape */
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 20px rgba(47,43,40,0.06);
+  --shadow-md: 0 12px 32px rgba(47,43,40,0.10);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* Nav helpers */
+.nav-pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s, opacity 0.15s;
+  color: var(--muted);
+}
+.nav-pill:hover {
+  background: rgba(31, 138, 112, 0.1);
+}
+
+.nav-cta {
+  margin-left: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background: var(--secondary);
+  transition: background 0.15s;
+}
+.nav-cta:hover {
+  background: var(--secondary-hover);
+}
