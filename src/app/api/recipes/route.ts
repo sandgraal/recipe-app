@@ -6,12 +6,13 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  // Always serve fresh data so mutations (create/delete) reflect immediately.
-  'Cache-Control': 'no-store, must-revalidate',
 };
 
+// Always serve fresh data so mutations (create/delete) reflect immediately.
+const NO_STORE = { 'Cache-Control': 'no-store, must-revalidate' };
+
 function json(data: unknown, init?: ResponseInit) {
-  return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
+  return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
 }
 
 export async function OPTIONS() {

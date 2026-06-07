@@ -347,9 +347,8 @@ export default function RecipeDetailPage() {
     try {
       const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE', cache: 'no-store' });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setDeleting(false);
-        setDeleteError(data.error || `Delete failed (${res.status}). Please try again.`);
+        setDeleteError(t(locale, 'recipe_delete_failed'));
         return;
       }
       // Navigate home and invalidate the router cache so the deleted recipe
@@ -358,7 +357,7 @@ export default function RecipeDetailPage() {
       router.refresh();
     } catch {
       setDeleting(false);
-      setDeleteError('Delete failed — check your connection and try again.');
+      setDeleteError(t(locale, 'recipe_delete_failed_conn'));
     }
   }
 
@@ -424,7 +423,7 @@ export default function RecipeDetailPage() {
                   style={{ borderRadius: 'var(--radius-sm)', borderColor: 'var(--border)', color: 'var(--text)' }}>
                   {t(locale, 'recipe_edit')}
                 </Link>
-                <button onClick={() => setShowConfirm(true)}
+                <button onClick={() => { setDeleteError(''); setShowConfirm(true); }}
                   className="px-3 py-1.5 text-sm font-medium text-white"
                   style={{ borderRadius: 'var(--radius-sm)', background: '#e05252' }}>
                   {t(locale, 'recipe_delete')}
@@ -626,8 +625,8 @@ export default function RecipeDetailPage() {
                 style={{ background: '#e05252', borderRadius: 'var(--radius-sm)' }}>
                 {deleting ? t(locale, 'recipe_deleting') : t(locale, 'recipe_delete')}
               </button>
-              <button onClick={() => setShowConfirm(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium border"
+              <button onClick={() => { setShowConfirm(false); setDeleteError(''); }} disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm font-medium border disabled:opacity-50"
                 style={{ borderColor: 'var(--border)', color: 'var(--text)', borderRadius: 'var(--radius-sm)' }}>
                 {t(locale, 'recipe_delete_cancel')}
               </button>
