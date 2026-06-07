@@ -569,6 +569,7 @@ const INGREDIENT_ES: Record<string, string> = {
 const CUISINE_ES: Record<string, string> = {
   'costa rican': 'Costarricense',
   'costa rican (caribbean)': 'Costarricense (Caribe)',
+  'costa rican (chinese)': 'Costarricense (China)',
   'caribbean': 'Caribeña',
   'italian': 'Italiana', 'mexican': 'Mexicana', 'peruvian': 'Peruana',
   'spanish': 'Española', 'american': 'Estadounidense', 'korean': 'Coreana',
@@ -585,7 +586,7 @@ const TAG_ES: Record<string, string> = {
   'vegetarian': 'Vegetariano', 'costa rican': 'Costarricense', 'caribbean': 'Caribe',
   'drinks': 'Bebidas', 'holiday': 'Festivo', 'cake': 'Pastel', 'bread': 'Pan',
   'candy': 'Dulces', 'coconut': 'Coco', 'corn': 'Maíz', 'cheese': 'Queso',
-  'masa': 'Masa', 'pasta': 'Pasta',
+  'masa': 'Masa', 'pasta': 'Pasta', 'chinese': 'China', 'noodles': 'Fideos',
 };
 
 export function localizeCategory(category: string, lang: Locale): string {
