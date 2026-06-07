@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Recipe } from '@/lib/types';
-import { t, type Locale } from '@/lib/i18n';
+import { t, localizeCategory, localizeIngredient, type Locale } from '@/lib/i18n';
 import { useAdmin } from '@/lib/useAdmin';
 
 // ─── Pantry data ────────────────────────────────────────────────────────────
@@ -292,10 +292,11 @@ export default function IdentifyPage() {
     const q = inputVal.trim().toLowerCase();
     if (q.length < 2) { setAutocomplete([]); return; }
     const matches = ALL_INGREDIENTS
-      .filter(i => i.includes(q) && !pantry.has(i))
+      .filter(i => !pantry.has(i) &&
+        (i.includes(q) || localizeIngredient(i, locale).toLowerCase().includes(q)))
       .slice(0, 8);
     setAutocomplete(matches);
-  }, [inputVal, pantry]);
+  }, [inputVal, pantry, locale]);
 
   const scored = recipes
     .map(r => ({ recipe: r, ...matchScore(r, pantry, focus || undefined) }))
@@ -521,7 +522,7 @@ export default function IdentifyPage() {
                       <button key={item} onClick={() => addIngredient(item)}
                         className="w-full text-left px-4 py-2.5 text-sm hover:opacity-70 transition-opacity"
                         style={{ color: 'var(--text)', borderBottom: '1px solid var(--border)' }}>
-                        {item}
+                        {localizeIngredient(item, locale)}
                       </button>
                     ))}
                   </div>
@@ -532,7 +533,7 @@ export default function IdentifyPage() {
               {pantry.size > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {[...pantry].map(ing => (
-                    <PantryChip key={ing} label={ing} onRemove={() => removeIngredient(ing)} />
+                    <PantryChip key={ing} label={localizeIngredient(ing, locale)} onRemove={() => removeIngredient(ing)} />
                   ))}
                 </div>
               ) : (
@@ -549,7 +550,7 @@ export default function IdentifyPage() {
                     <button key={s} onClick={() => addIngredient(s)}
                       className="px-2.5 py-1 rounded-full text-xs transition-colors hover:opacity-70"
                       style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--muted)' }}>
-                      + {s}
+                      + {localizeIngredient(s, locale)}
                     </button>
                   ))}
                 </div>
@@ -569,7 +570,7 @@ export default function IdentifyPage() {
                       ? { background: 'var(--secondary)', color: 'white' }
                       : { background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--muted)' }}
                   >
-                    {cat}
+                    {localizeCategory(cat, locale)}
                   </button>
                 ))}
               </div>
@@ -579,7 +580,7 @@ export default function IdentifyPage() {
                     <button key={i} onClick={() => addIngredient(i)}
                       className="px-2.5 py-1 rounded-full text-xs transition-opacity hover:opacity-70"
                       style={{ background: 'rgba(31,138,112,0.08)', color: 'var(--secondary)', border: '1px solid rgba(31,138,112,0.2)' }}>
-                      + {i}
+                      + {localizeIngredient(i, locale)}
                     </button>
                   ))}
                   {INGREDIENT_CATEGORIES[activeCategory].filter(i => !pantry.has(i)).length === 0 && (
@@ -606,12 +607,12 @@ export default function IdentifyPage() {
                 >
                   <option value="">{t(locale, 'identify_focus_any')}</option>
                   {[...pantry].map(ing => (
-                    <option key={ing} value={ing}>{ing}</option>
+                    <option key={ing} value={ing}>{localizeIngredient(ing, locale)}</option>
                   ))}
                 </select>
                 {focus && (
                   <p className="text-xs mt-2" style={{ color: 'var(--secondary)' }}>
-                    {t(locale, 'identify_focus_active')} <strong>{focus}</strong>
+                    {t(locale, 'identify_focus_active')} <strong>{localizeIngredient(focus, locale)}</strong>
                   </p>
                 )}
               </div>
@@ -637,7 +638,7 @@ export default function IdentifyPage() {
                     <button key={s} onClick={() => addIngredient(s)}
                       className="px-3 py-1.5 rounded-full text-sm transition-opacity hover:opacity-70"
                       style={{ background: 'rgba(31,138,112,0.1)', color: 'var(--secondary)', border: '1px solid rgba(31,138,112,0.2)' }}>
-                      + {s}
+                      + {localizeIngredient(s, locale)}
                     </button>
                   ))}
                 </div>
