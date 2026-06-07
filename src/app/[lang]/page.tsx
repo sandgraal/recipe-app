@@ -257,20 +257,24 @@ export default function HomePage() {
     return mins > 0 && mins <= 30;
   }).slice(0, 12);
 
-  // Regional rows: only meaningful sub-cuisines (e.g. Chinese, Caribbean).
-  // Skip the generic "Costa Rican" cuisine — it's ~the whole collection, so a
-  // row of it just duplicates the full list.
-  const featuredCuisineNames = new Set(['Chinese', 'Caribbean']);
+  // Regional rows: any meaningful sub-cuisine with enough recipes (in practice
+  // the "Costa Rican (Chinese)" and "Costa Rican (Caribbean)" variants). The
+  // generic "Costa Rican" cuisine is already excluded upstream — a row of it
+  // would just duplicate the full list.
   const cuisineGroups = cuisines
-    .filter(c => featuredCuisineNames.has(c))
+    .filter(c => c.trim().toLowerCase() !== 'costa rican')
     .map(c => ({ cuisine: c, recipes: featurable.filter(r => r.cuisine === c) }))
     .filter(g => g.recipes.length >= 3)
     .slice(0, 3);
 
-  // Food-type rows: the most popular meaningful tags, by count. Excludes tags
-  // already represented as cuisine rows (Caribbean/Chinese) so rows don't
-  // duplicate each other. allTags is already cleaned (no "Costa Rican", no noise).
-  const cuisineTagNames = new Set(cuisineGroups.map(g => g.cuisine));
+  // Food-type rows: the most popular meaningful tags, by count. Exclude any tag
+  // already represented by a rendered cuisine row — matched by substring so the
+  // "Caribbean"/"Chinese" tags drop out against "Costa Rican (Caribbean)" /
+  // "(Chinese)" cuisine rows. Derived from the actual cuisineGroups, not hard-coded.
+  const cuisineTagNames = new Set<string>();
+  cuisineGroups.forEach(g => allTags.forEach(tag => {
+    if (g.cuisine.toLowerCase().includes(tag.toLowerCase())) cuisineTagNames.add(tag);
+  }));
   const tagGroups = allTags
     .filter(tag => !cuisineTagNames.has(tag))
     .map(tag => ({ tag, recipes: featurable.filter(r => r.tags?.includes(tag)) }))
