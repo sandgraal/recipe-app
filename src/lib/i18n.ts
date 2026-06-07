@@ -396,6 +396,41 @@ export function formatTime(time: string | null | undefined, lang: Locale): strin
   return out;
 }
 
+// ── Measurement unit localisation ─────────────────────────────────────────────
+// Ingredient `unit` is stored in English (e.g. "cup", "tbsp", "cloves"). The
+// Spanish view keeps the numeric amount but shows local unit words. Volumetric
+// units (taza, cucharada) are the everyday standard in Costa Rican home recipes;
+// metric units (g, kg, ml, l) are already universal and pass through unchanged.
+
+const UNIT_ES: Record<string, string> = {
+  cup: 'taza', cups: 'tazas',
+  tablespoon: 'cda', tablespoons: 'cda', tbsp: 'cda', tbs: 'cda',
+  teaspoon: 'cdta', teaspoons: 'cdta', tsp: 'cdta',
+  clove: 'diente', cloves: 'dientes',
+  pinch: 'pizca', pinches: 'pizcas',
+  dash: 'chorrito', dashes: 'chorritos',
+  can: 'lata', cans: 'latas',
+  jar: 'frasco', jars: 'frascos',
+  bunch: 'manojo', bunches: 'manojos',
+  handful: 'puñado', handfuls: 'puñados',
+  slice: 'rebanada', slices: 'rebanadas',
+  piece: 'trozo', pieces: 'trozos',
+  stick: 'barra', sticks: 'barras',
+  package: 'paquete', packages: 'paquetes', pkg: 'paquete',
+  ounce: 'onza', ounces: 'onzas', oz: 'onza',
+  pound: 'libra', pounds: 'libras', lb: 'libra', lbs: 'libras',
+  quart: 'cuarto', quarts: 'cuartos',
+  gallon: 'galón', gallons: 'galones',
+  liter: 'l', liters: 'l', litre: 'l', litres: 'l',
+};
+
+export function localizeUnit(unit: string | null | undefined, lang: Locale): string {
+  if (!unit) return '';
+  if (lang !== 'es') return unit;
+  const key = unit.trim().toLowerCase().replace(/\.$/, '');
+  return UNIT_ES[key] ?? unit;
+}
+
 // ── Greeting helper ───────────────────────────────────────────────────────────
 
 export function getGreeting(lang: Locale) {

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Recipe } from '@/lib/types';
 import {
-  t, formatTime, type Locale,
+  t, formatTime, localizeUnit, type Locale,
   recipeTitle, recipeDescription, recipeNotes, recipeSteps,
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
@@ -525,7 +525,7 @@ export default function RecipeDetailPage() {
                           {checked.has(i) && <span className="text-white text-xs">✓</span>}
                         </span>
                         <span className="w-14 flex-shrink-0 text-right font-medium" style={{ color: 'var(--accent)' }}>
-                          {scaleAmount(ing.amount, multiplier)} {ing.unit}
+                          {scaleAmount(ing.amount, multiplier)} {localizeUnit(ing.unit, locale)}
                         </span>
                         <span style={{ color: 'var(--text)', textDecoration: checked.has(i) ? 'line-through' : 'none' }}>
                           {translated.item}
