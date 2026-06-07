@@ -310,6 +310,7 @@ export default function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
   const [cookMode, setCookMode] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
@@ -342,8 +343,23 @@ export default function RecipeDetailPage() {
 
   async function handleDelete() {
     setDeleting(true);
-    await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
-    router.push(`/${lang}`);
+    setDeleteError('');
+    try {
+      const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE', cache: 'no-store' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setDeleting(false);
+        setDeleteError(data.error || `Delete failed (${res.status}). Please try again.`);
+        return;
+      }
+      // Navigate home and invalidate the router cache so the deleted recipe
+      // doesn't linger in the (cached) list — the classic post-mutation refresh.
+      router.push(`/${lang}`);
+      router.refresh();
+    } catch {
+      setDeleting(false);
+      setDeleteError('Delete failed — check your connection and try again.');
+    }
   }
 
   if (loading) {
@@ -598,9 +614,12 @@ export default function RecipeDetailPage() {
             <h3 className="text-xl mb-2" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
               {t(locale, 'recipe_delete_title')}
             </h3>
-            <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
+            <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
               {t(locale, 'recipe_delete_body', { title: displayTitle })}
             </p>
+            {deleteError && (
+              <p className="text-sm mb-4" style={{ color: '#e05252' }}>{deleteError}</p>
+            )}
             <div className="flex gap-3">
               <button onClick={handleDelete} disabled={deleting}
                 className="flex-1 px-4 py-2 text-sm font-medium text-white"

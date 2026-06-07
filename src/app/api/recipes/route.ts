@@ -6,6 +6,8 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  // Always serve fresh data so mutations (create/delete) reflect immediately.
+  'Cache-Control': 'no-store, must-revalidate',
 };
 
 function json(data: unknown, init?: ResponseInit) {
