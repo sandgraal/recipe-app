@@ -102,15 +102,6 @@ export default async function LangLayout({
                 Creaciones Colibrí · Recetas
               </span>
             </div>
-            <a
-              href="https://sandgraal.github.io/creaciones-colibri/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs transition-opacity hover:opacity-70"
-              style={{ color: 'var(--secondary)' }}
-            >
-              {t(locale, 'footer_store')}
-            </a>
           </div>
         </footer>
       </div>
