@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Recipe } from '@/lib/types';
 import {
-  t, formatTime, localizeUnit, type Locale,
+  t, formatTime, localizeUnit, localizeCuisine, type Locale,
   recipeTitle, recipeDescription, recipeNotes, recipeSteps,
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
@@ -472,7 +472,7 @@ export default function RecipeDetailPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4 mb-3 text-sm" style={{ color: 'var(--muted)' }}>
-          {recipe.cuisine && <span>🌍 {recipe.cuisine}</span>}
+          {recipe.cuisine && <span>🌍 {localizeCuisine(recipe.cuisine, locale)}</span>}
           {recipe.total_time && <span>⏱ {formatTime(recipe.total_time, locale)}</span>}
           {recipe.servings && <span>👤 {t(locale, 'recipe_servings', { n: recipe.servings })}</span>}
         </div>

@@ -431,6 +431,184 @@ export function localizeUnit(unit: string | null | undefined, lang: Locale): str
   return UNIT_ES[key] ?? unit;
 }
 
+// ── Pantry category / ingredient / cuisine / tag localisation ─────────────────
+// The pantry stores and matches ingredients in English; these maps only affect
+// what the Spanish UI *displays*. English values are preserved for matching.
+
+const CATEGORY_ES: Record<string, string> = {
+  'Proteins': 'Proteínas',
+  'Beans & Legumes': 'Frijoles y Legumbres',
+  'Vegetables': 'Verduras',
+  'Fruits': 'Frutas',
+  'Grains & Pasta': 'Granos y Pastas',
+  'Dairy & Eggs': 'Lácteos y Huevos',
+  'Herbs & Spices': 'Hierbas y Especias',
+  'Pantry Staples': 'Despensa Básica',
+};
+
+const INGREDIENT_ES: Record<string, string> = {
+  // Proteins
+  'chicken breast': 'pechuga de pollo', 'chicken thighs': 'muslos de pollo',
+  'whole chicken': 'pollo entero', 'ground chicken': 'pollo molido',
+  'ground beef': 'carne molida', 'ground turkey': 'pavo molido',
+  'ground pork': 'cerdo molido', 'steak': 'bistec', 'beef roast': 'carne para asar',
+  'pork chops': 'chuletas de cerdo', 'pork tenderloin': 'lomo de cerdo',
+  'pork shoulder': 'paleta de cerdo', 'ribs': 'costillas', 'ham': 'jamón',
+  'bacon': 'tocino', 'sausage': 'salchicha', 'chorizo': 'chorizo',
+  'hot dogs': 'salchichas (hot dogs)', 'salmon': 'salmón', 'shrimp': 'camarones',
+  'tuna': 'atún', 'cod': 'bacalao', 'tilapia': 'tilapia', 'corvina': 'corvina',
+  'white fish': 'pescado blanco', 'crab': 'cangrejo', 'scallops': 'vieiras',
+  'eggs': 'huevos', 'tofu': 'tofu', 'tempeh': 'tempeh', 'seitan': 'seitán',
+  'turkey': 'pavo', 'lamb': 'cordero', 'veal': 'ternera', 'deli meat': 'fiambres',
+  // Beans & Legumes
+  'black beans': 'frijoles negros', 'kidney beans': 'frijoles rojos',
+  'pinto beans': 'frijoles pintos', 'white beans': 'frijoles blancos',
+  'cannellini beans': 'frijoles cannellini', 'navy beans': 'frijoles navy',
+  'garbanzo beans': 'garbanzos', 'chickpeas': 'garbanzos', 'lentils': 'lentejas',
+  'red lentils': 'lentejas rojas', 'green lentils': 'lentejas verdes',
+  'split peas': 'arvejas partidas', 'black-eyed peas': 'frijoles carita',
+  'lima beans': 'frijoles lima', 'refried beans': 'frijoles molidos',
+  'red beans': 'frijoles colorados', 'edamame': 'edamame',
+  // Vegetables
+  'onion': 'cebolla', 'red onion': 'cebolla morada', 'green onion': 'cebollín',
+  'shallot': 'chalote', 'leek': 'puerro', 'garlic': 'ajo', 'ginger': 'jengibre',
+  'tomato': 'tomate', 'cherry tomatoes': 'tomates cherry', 'bell pepper': 'chile dulce',
+  'red pepper': 'pimiento rojo', 'jalapeño': 'jalapeño', 'serrano': 'serrano',
+  'poblano': 'poblano', 'chili pepper': 'chile picante', 'spinach': 'espinaca',
+  'broccoli': 'brócoli', 'carrot': 'zanahoria', 'celery': 'apio',
+  'zucchini': 'calabacín', 'squash': 'calabaza', 'butternut squash': 'calabaza butternut',
+  'mushrooms': 'hongos', 'potato': 'papa', 'sweet potato': 'camote',
+  'cucumber': 'pepino', 'lettuce': 'lechuga', 'romaine': 'lechuga romana',
+  'arugula': 'rúcula', 'kale': 'col rizada', 'chard': 'acelga', 'corn': 'maíz',
+  'green beans': 'vainicas', 'peas': 'arvejas', 'snap peas': 'arvejas dulces',
+  'eggplant': 'berenjena', 'cauliflower': 'coliflor', 'cabbage': 'repollo',
+  'napa cabbage': 'repollo napa', 'brussels sprouts': 'repollitos de Bruselas',
+  'asparagus': 'espárragos', 'beets': 'remolacha', 'radish': 'rábano',
+  'turnip': 'nabo', 'artichoke': 'alcachofa', 'okra': 'okra', 'fennel': 'hinojo',
+  'bok choy': 'bok choy', 'pumpkin': 'ayote', 'plantain': 'plátano',
+  'green plantain': 'plátano verde', 'yuca': 'yuca', 'cassava': 'mandioca',
+  'chayote': 'chayote', 'heart of palm': 'palmito', 'taro': 'malanga', 'ayote': 'ayote',
+  // Fruits
+  'lemon': 'limón amarillo', 'lime': 'limón', 'orange': 'naranja',
+  'grapefruit': 'toronja', 'avocado': 'aguacate', 'mango': 'mango', 'apple': 'manzana',
+  'pear': 'pera', 'banana': 'banano', 'strawberries': 'fresas',
+  'blueberries': 'arándanos', 'raspberries': 'frambuesas', 'blackberries': 'moras',
+  'grapes': 'uvas', 'pineapple': 'piña', 'peach': 'durazno', 'plum': 'ciruela',
+  'cherries': 'cerezas', 'watermelon': 'sandía', 'cantaloupe': 'melón', 'kiwi': 'kiwi',
+  'pomegranate': 'granada', 'cranberries': 'arándanos rojos', 'raisins': 'pasas',
+  'dates': 'dátiles', 'coconut': 'coco', 'coconut milk': 'leche de coco',
+  'lime juice': 'jugo de limón', 'lemon juice': 'jugo de limón amarillo',
+  'papaya': 'papaya', 'guava': 'guayaba', 'passion fruit': 'maracuyá',
+  'soursop': 'guanábana', 'tamarind': 'tamarindo', 'starfruit': 'carambola',
+  // Grains & Pasta
+  'white rice': 'arroz blanco', 'brown rice': 'arroz integral',
+  'jasmine rice': 'arroz jazmín', 'basmati rice': 'arroz basmati',
+  'arborio rice': 'arroz arborio', 'pasta': 'pasta', 'spaghetti': 'espagueti',
+  'penne': 'penne', 'macaroni': 'macarrones', 'lasagna noodles': 'láminas de lasaña',
+  'egg noodles': 'fideos de huevo', 'rice noodles': 'fideos de arroz', 'ramen': 'ramen',
+  'quinoa': 'quinoa', 'farro': 'farro', 'barley': 'cebada', 'bulgur': 'bulgur',
+  'bread': 'pan', 'baguette': 'baguette', 'pita': 'pan pita', 'naan': 'pan naan',
+  'tortillas': 'tortillas', 'corn tortillas': 'tortillas de maíz', 'flour': 'harina',
+  'all-purpose flour': 'harina todo uso', 'whole wheat flour': 'harina integral',
+  'cornmeal': 'harina de maíz', 'masa harina': 'masa harina', 'bread crumbs': 'pan rallado',
+  'panko': 'panko', 'oats': 'avena', 'couscous': 'cuscús', 'polenta': 'polenta',
+  'crackers': 'galletas saladas',
+  // Dairy & Eggs
+  'butter': 'mantequilla', 'milk': 'leche', 'whole milk': 'leche entera',
+  'almond milk': 'leche de almendras', 'oat milk': 'leche de avena',
+  'heavy cream': 'crema espesa', 'half and half': 'media crema', 'sour cream': 'natilla',
+  'yogurt': 'yogur', 'greek yogurt': 'yogur griego', 'cheddar': 'queso cheddar',
+  'parmesan': 'queso parmesano', 'mozzarella': 'mozzarella', 'cream cheese': 'queso crema',
+  'feta': 'queso feta', 'ricotta': 'ricotta', 'cottage cheese': 'queso cottage',
+  'goat cheese': 'queso de cabra', 'swiss cheese': 'queso suizo',
+  'monterey jack': 'queso monterey jack', 'queso fresco': 'queso fresco',
+  'gruyere': 'gruyere', 'blue cheese': 'queso azul',
+  // Herbs & Spices
+  'basil': 'albahaca', 'oregano': 'orégano', 'thyme': 'tomillo', 'rosemary': 'romero',
+  'sage': 'salvia', 'dill': 'eneldo', 'mint': 'menta', 'cilantro': 'culantro',
+  'culantro': 'culantro coyote', 'parsley': 'perejil', 'chives': 'cebollino',
+  'tarragon': 'estragón', 'bay leaf': 'hoja de laurel', 'cumin': 'comino',
+  'coriander': 'cilantro en grano', 'paprika': 'paprika', 'smoked paprika': 'paprika ahumada',
+  'chili powder': 'chile en polvo', 'cinnamon': 'canela', 'nutmeg': 'nuez moscada',
+  'allspice': 'pimienta de Jamaica', 'cloves': 'clavos de olor', 'cardamom': 'cardamomo',
+  'turmeric': 'cúrcuma', 'garlic powder': 'ajo en polvo', 'onion powder': 'cebolla en polvo',
+  'curry powder': 'curry en polvo', 'garam masala': 'garam masala',
+  'italian seasoning': 'sazón italiano', 'red pepper flakes': 'hojuelas de chile',
+  'black pepper': 'pimienta negra', 'white pepper': 'pimienta blanca', 'cayenne': 'cayena',
+  'chili flakes': 'hojuelas de chile picante', 'saffron': 'azafrán',
+  'fennel seeds': 'semillas de hinojo', 'mustard seeds': 'semillas de mostaza',
+  'sesame seeds': 'semillas de ajonjolí', 'vanilla': 'vainilla',
+  'vanilla extract': 'extracto de vainilla', 'achiote': 'achiote',
+  // Pantry Staples
+  'olive oil': 'aceite de oliva', 'vegetable oil': 'aceite vegetal',
+  'canola oil': 'aceite de canola', 'coconut oil': 'aceite de coco',
+  'sesame oil': 'aceite de ajonjolí', 'salt': 'sal', 'sea salt': 'sal marina',
+  'sugar': 'azúcar', 'brown sugar': 'azúcar morena', 'powdered sugar': 'azúcar en polvo',
+  'panela': 'tapa de dulce', 'soy sauce': 'salsa de soya', 'tamari': 'tamari',
+  'vinegar': 'vinagre', 'white vinegar': 'vinagre blanco',
+  'apple cider vinegar': 'vinagre de manzana', 'balsamic vinegar': 'vinagre balsámico',
+  'rice vinegar': 'vinagre de arroz', 'red wine vinegar': 'vinagre de vino tinto',
+  'hot sauce': 'salsa picante', 'sriracha': 'sriracha', 'tomato paste': 'pasta de tomate',
+  'canned tomatoes': 'tomates enlatados', 'crushed tomatoes': 'tomates triturados',
+  'tomato sauce': 'salsa de tomate', 'salsa': 'salsa', 'broth': 'caldo',
+  'chicken broth': 'caldo de pollo', 'beef broth': 'caldo de res',
+  'vegetable broth': 'caldo de verduras', 'stock': 'fondo', 'honey': 'miel',
+  'maple syrup': 'jarabe de maple', 'molasses': 'melaza', 'condensed milk': 'leche condensada',
+  'mustard': 'mostaza', 'dijon mustard': 'mostaza dijon', 'mayonnaise': 'mayonesa',
+  'ketchup': 'ketchup', 'bbq sauce': 'salsa BBQ', 'worcestershire sauce': 'salsa inglesa',
+  'salsa lizano': 'salsa Lizano', 'fish sauce': 'salsa de pescado',
+  'oyster sauce': 'salsa de ostras', 'hoisin sauce': 'salsa hoisin',
+  'peanut butter': 'mantequilla de maní', 'tahini': 'tahini', 'cornstarch': 'maicena',
+  'baking soda': 'bicarbonato de sodio', 'baking powder': 'polvo de hornear',
+  'yeast': 'levadura', 'cocoa powder': 'cocoa en polvo',
+  'chocolate chips': 'chispas de chocolate', 'nuts': 'nueces', 'almonds': 'almendras',
+  'walnuts': 'nueces de Castilla', 'peanuts': 'maní', 'cashews': 'marañones',
+  'pine nuts': 'piñones',
+};
+
+const CUISINE_ES: Record<string, string> = {
+  'costa rican': 'Costarricense',
+  'costa rican (caribbean)': 'Costarricense (Caribe)',
+  'caribbean': 'Caribeña',
+  'italian': 'Italiana', 'mexican': 'Mexicana', 'peruvian': 'Peruana',
+  'spanish': 'Española', 'american': 'Estadounidense', 'korean': 'Coreana',
+  'chinese': 'China', 'thai': 'Tailandesa', 'japanese': 'Japonesa',
+  'vietnamese': 'Vietnamita', 'colombian': 'Colombiana', 'nicaraguan': 'Nicaragüense',
+  'french': 'Francesa', 'indian': 'India',
+};
+
+const TAG_ES: Record<string, string> = {
+  'mains': 'Platos Fuertes', 'soups': 'Sopas', 'soup': 'Sopa', 'desserts': 'Postres',
+  'breakfast': 'Desayuno', 'lunch': 'Almuerzo', 'sides': 'Acompañamientos',
+  'snacks': 'Bocadillos', 'appetizers': 'Entradas', 'rice': 'Arroz', 'beans': 'Frijoles',
+  'chicken': 'Pollo', 'beef': 'Res', 'pork': 'Cerdo', 'seafood': 'Mariscos',
+  'vegetarian': 'Vegetariano', 'costa rican': 'Costarricense', 'caribbean': 'Caribe',
+  'drinks': 'Bebidas', 'holiday': 'Festivo', 'cake': 'Pastel', 'bread': 'Pan',
+  'candy': 'Dulces', 'coconut': 'Coco', 'corn': 'Maíz', 'cheese': 'Queso',
+  'masa': 'Masa', 'pasta': 'Pasta',
+};
+
+export function localizeCategory(category: string, lang: Locale): string {
+  if (lang !== 'es') return category;
+  return CATEGORY_ES[category] ?? category;
+}
+
+export function localizeIngredient(item: string, lang: Locale): string {
+  if (lang !== 'es' || !item) return item;
+  return INGREDIENT_ES[item.trim().toLowerCase()] ?? item;
+}
+
+export function localizeCuisine(cuisine: string | null | undefined, lang: Locale): string {
+  if (!cuisine) return '';
+  if (lang !== 'es') return cuisine;
+  return CUISINE_ES[cuisine.trim().toLowerCase()] ?? cuisine;
+}
+
+export function localizeTag(tag: string, lang: Locale): string {
+  if (lang !== 'es' || !tag) return tag;
+  return TAG_ES[tag.trim().toLowerCase()] ?? tag;
+}
+
 // ── Greeting helper ───────────────────────────────────────────────────────────
 
 export function getGreeting(lang: Locale) {

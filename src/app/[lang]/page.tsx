@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import RecipeCard from '@/components/RecipeCard';
 import { Recipe } from '@/lib/types';
-import { t, getGreeting, type Locale } from '@/lib/i18n';
+import { t, getGreeting, localizeCuisine, localizeTag, type Locale } from '@/lib/i18n';
 import { useAdmin } from '@/lib/useAdmin';
 
 function parseMinutes(time: string): number {
@@ -145,7 +145,7 @@ function SearchOverlay({
                     style={cuisine === c
                       ? { background: 'var(--secondary)', color: 'white' }
                       : { background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--muted)' }}>
-                    {c}
+                    {localizeCuisine(c, lang)}
                   </button>
                 ))}
               </div>
@@ -158,7 +158,7 @@ function SearchOverlay({
                     style={activeTag === tag
                       ? { background: 'var(--accent)', color: 'white' }
                       : { background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--muted)' }}>
-                    {tag}
+                    {localizeTag(tag, lang)}
                   </button>
                 ))}
               </div>
@@ -431,7 +431,7 @@ export default function HomePage() {
             {cuisineGroups.map(g => (
               <RecipeRow
                 key={g.cuisine}
-                title={g.cuisine!}
+                title={localizeCuisine(g.cuisine, locale)}
                 recipes={g.recipes}
                 viewAllLabel={t(locale, 'home_all_n', { n: g.recipes.length })}
                 onViewAll={() => handleViewAll(g.cuisine!, undefined)}
@@ -442,7 +442,7 @@ export default function HomePage() {
             {tagGroups.map(g => (
               <RecipeRow
                 key={g.tag}
-                title={`#${g.tag}`}
+                title={`#${localizeTag(g.tag!, locale)}`}
                 recipes={g.recipes}
                 viewAllLabel={t(locale, 'home_all_n', { n: g.recipes.length })}
                 onViewAll={() => handleViewAll(undefined, g.tag)}

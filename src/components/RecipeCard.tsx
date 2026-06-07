@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { Recipe } from '@/lib/types';
-import { recipeTitle, recipeTags, formatTime, type Locale } from '@/lib/i18n';
+import { recipeTitle, recipeTags, formatTime, localizeCuisine, type Locale } from '@/lib/i18n';
 
 const GRADIENTS = [
   'linear-gradient(145deg, #fde8d8 0%, #f7c4a8 100%)',
@@ -68,7 +68,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
             {title}
           </h2>
           <div className="flex items-center gap-3 text-xs" style={{ color: 'rgba(255,255,255,0.75)' }}>
-            {recipe.cuisine && <span>{recipe.cuisine}</span>}
+            {recipe.cuisine && <span>{localizeCuisine(recipe.cuisine, locale)}</span>}
             {recipe.total_time && <><span style={{ opacity: 0.5 }}>·</span><span>⏱ {formatTime(recipe.total_time, locale)}</span></>}
             {recipe.servings && <><span style={{ opacity: 0.5 }}>·</span><span>👤 {recipe.servings}</span></>}
           </div>
@@ -114,7 +114,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
             {title}
           </h3>
           <div className="flex items-center gap-2 text-xs mt-2" style={{ color: 'var(--muted)' }}>
-            {recipe.cuisine && <span>{recipe.cuisine}</span>}
+            {recipe.cuisine && <span>{localizeCuisine(recipe.cuisine, locale)}</span>}
             {recipe.total_time && <><span style={{ opacity: 0.4 }}>·</span><span>⏱ {formatTime(recipe.total_time, locale)}</span></>}
             {recipe.servings && <><span style={{ opacity: 0.4 }}>·</span><span>👤 {recipe.servings}</span></>}
           </div>
@@ -175,7 +175,7 @@ function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: str
             {title}
           </h3>
           <p className="text-xs" style={{ color: 'var(--muted)' }}>
-            {[recipe.cuisine, recipe.total_time ? formatTime(recipe.total_time, locale) : null].filter(Boolean).join(' · ') || ' '}
+            {[localizeCuisine(recipe.cuisine, locale), recipe.total_time ? formatTime(recipe.total_time, locale) : null].filter(Boolean).join(' · ') || ' '}
           </p>
         </div>
       </div>
