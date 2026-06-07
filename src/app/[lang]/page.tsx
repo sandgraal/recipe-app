@@ -231,24 +231,29 @@ export default function HomePage() {
     if (!isFiltering) setShowGrid(false);
   }, [isFiltering]);
 
-  const recent = allRecipes.slice(0, 20);
+  // Only recipes with a photo are eligible for the curated first-load sections
+  // (hero + rows). Photoless recipes stay fully reachable via search and the
+  // "view all" grids — they just aren't featured with an empty placeholder.
+const featurable = allRecipes.filter(r => !!r.image_url?.trim());
+
+  const recent = featurable.slice(0, 20);
   const hero = recent[0];
   const heroSecondary = recent.slice(1, 3);
 
-  const quickMeals = allRecipes.filter(r => {
+  const quickMeals = featurable.filter(r => {
     if (!r.total_time) return false;
     const mins = parseMinutes(r.total_time);
     return mins > 0 && mins <= 30;
   }).slice(0, 12);
 
   const cuisineGroups = cuisines
-    .map(c => ({ cuisine: c, recipes: allRecipes.filter(r => r.cuisine === c) }))
+    .map(c => ({ cuisine: c, recipes: featurable.filter(r => r.cuisine === c) }))
     .filter(g => g.recipes.length >= 3)
     .slice(0, 3);
 
   const tagGroups = allTags
     .slice(0, 2)
-    .map(tag => ({ tag, recipes: allRecipes.filter(r => r.tags?.includes(tag)) }))
+    .map(tag => ({ tag, recipes: featurable.filter(r => r.tags?.includes(tag)) }))
     .filter(g => g.recipes.length >= 3);
 
   const greeting = getGreeting(locale);
