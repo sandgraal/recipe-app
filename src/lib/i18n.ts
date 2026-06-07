@@ -416,7 +416,7 @@ const UNIT_ES: Record<string, string> = {
   slice: 'rebanada', slices: 'rebanadas',
   piece: 'trozo', pieces: 'trozos',
   stick: 'barra', sticks: 'barras',
-  package: 'paquete', packages: 'paquete', pkg: 'paquete',
+  package: 'paquete', packages: 'paquetes', pkg: 'paquete',
   ounce: 'onza', ounces: 'onzas', oz: 'onza',
   pound: 'libra', pounds: 'libras', lb: 'libra', lbs: 'libras',
   quart: 'cuarto', quarts: 'cuartos',
