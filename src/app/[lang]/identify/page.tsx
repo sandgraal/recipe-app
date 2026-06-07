@@ -14,39 +14,75 @@ const PANTRY_KEY = 'colibri_pantry_v1';
 
 const INGREDIENT_CATEGORIES: Record<string, string[]> = {
   'Proteins': [
-    'chicken breast', 'chicken thighs', 'ground beef', 'steak', 'pork chops',
-    'bacon', 'sausage', 'salmon', 'shrimp', 'tuna', 'eggs', 'tofu',
-    'lentils', 'black beans', 'chickpeas', 'turkey', 'lamb',
+    'chicken breast', 'chicken thighs', 'whole chicken', 'ground chicken',
+    'ground beef', 'ground turkey', 'ground pork', 'steak', 'beef roast',
+    'pork chops', 'pork tenderloin', 'pork shoulder', 'ribs', 'ham',
+    'bacon', 'sausage', 'chorizo', 'hot dogs', 'salmon', 'shrimp', 'tuna',
+    'cod', 'tilapia', 'white fish', 'crab', 'scallops', 'eggs', 'tofu',
+    'tempeh', 'seitan', 'turkey', 'lamb', 'veal', 'deli meat',
+  ],
+  'Beans & Legumes': [
+    'black beans', 'kidney beans', 'pinto beans', 'white beans',
+    'cannellini beans', 'navy beans', 'garbanzo beans', 'chickpeas',
+    'lentils', 'red lentils', 'green lentils', 'split peas', 'black-eyed peas',
+    'lima beans', 'refried beans', 'edamame',
   ],
   'Vegetables': [
-    'onion', 'garlic', 'tomato', 'bell pepper', 'spinach', 'broccoli',
-    'carrot', 'celery', 'zucchini', 'mushrooms', 'potato', 'sweet potato',
-    'cucumber', 'lettuce', 'kale', 'corn', 'green beans', 'peas',
-    'jalapeño', 'eggplant', 'cauliflower', 'cabbage', 'asparagus',
+    'onion', 'red onion', 'green onion', 'shallot', 'leek', 'garlic',
+    'ginger', 'tomato', 'cherry tomatoes', 'bell pepper', 'red pepper',
+    'jalapeño', 'serrano', 'poblano', 'chili pepper', 'spinach', 'broccoli',
+    'carrot', 'celery', 'zucchini', 'squash', 'butternut squash',
+    'mushrooms', 'potato', 'sweet potato', 'cucumber', 'lettuce',
+    'romaine', 'arugula', 'kale', 'chard', 'corn', 'green beans', 'peas',
+    'snap peas', 'eggplant', 'cauliflower', 'cabbage', 'napa cabbage',
+    'brussels sprouts', 'asparagus', 'beets', 'radish', 'turnip',
+    'artichoke', 'okra', 'fennel', 'bok choy', 'pumpkin',
   ],
   'Fruits': [
-    'lemon', 'lime', 'orange', 'tomato', 'avocado', 'mango', 'apple',
-    'banana', 'strawberries', 'blueberries', 'grapes', 'pineapple',
-    'coconut milk', 'lime juice', 'lemon juice',
+    'lemon', 'lime', 'orange', 'grapefruit', 'avocado', 'mango', 'apple',
+    'pear', 'banana', 'strawberries', 'blueberries', 'raspberries',
+    'blackberries', 'grapes', 'pineapple', 'peach', 'plum', 'cherries',
+    'watermelon', 'cantaloupe', 'kiwi', 'pomegranate', 'cranberries',
+    'raisins', 'dates', 'coconut', 'coconut milk', 'lime juice', 'lemon juice',
   ],
   'Grains & Pasta': [
-    'rice', 'pasta', 'spaghetti', 'penne', 'quinoa', 'bread', 'tortillas',
-    'flour', 'bread crumbs', 'oats', 'couscous', 'noodles', 'polenta',
+    'white rice', 'brown rice', 'jasmine rice', 'basmati rice', 'arborio rice',
+    'pasta', 'spaghetti', 'penne', 'macaroni', 'lasagna noodles', 'egg noodles',
+    'rice noodles', 'ramen', 'quinoa', 'farro', 'barley', 'bulgur',
+    'bread', 'baguette', 'pita', 'naan', 'tortillas', 'corn tortillas',
+    'flour', 'all-purpose flour', 'whole wheat flour', 'cornmeal',
+    'bread crumbs', 'panko', 'oats', 'couscous', 'polenta', 'crackers',
   ],
-  'Dairy': [
-    'butter', 'milk', 'heavy cream', 'sour cream', 'yogurt', 'cheddar',
-    'parmesan', 'mozzarella', 'cream cheese', 'feta', 'ricotta',
+  'Dairy & Eggs': [
+    'butter', 'milk', 'whole milk', 'almond milk', 'oat milk',
+    'heavy cream', 'half and half', 'sour cream', 'yogurt', 'greek yogurt',
+    'cheddar', 'parmesan', 'mozzarella', 'cream cheese', 'feta', 'ricotta',
+    'cottage cheese', 'goat cheese', 'swiss cheese', 'monterey jack',
+    'queso fresco', 'gruyere', 'blue cheese', 'eggs',
   ],
   'Herbs & Spices': [
-    'basil', 'oregano', 'thyme', 'rosemary', 'cilantro', 'parsley',
-    'cumin', 'paprika', 'chili powder', 'cinnamon', 'turmeric', 'ginger',
-    'bay leaf', 'red pepper flakes', 'black pepper', 'cayenne',
+    'basil', 'oregano', 'thyme', 'rosemary', 'sage', 'dill', 'mint',
+    'cilantro', 'parsley', 'chives', 'tarragon', 'bay leaf',
+    'cumin', 'coriander', 'paprika', 'smoked paprika', 'chili powder',
+    'cinnamon', 'nutmeg', 'allspice', 'cloves', 'cardamom', 'turmeric',
+    'ginger', 'garlic powder', 'onion powder', 'curry powder', 'garam masala',
+    'italian seasoning', 'red pepper flakes', 'black pepper', 'white pepper',
+    'cayenne', 'chili flakes', 'saffron', 'fennel seeds', 'mustard seeds',
+    'sesame seeds', 'vanilla', 'vanilla extract',
   ],
   'Pantry Staples': [
-    'olive oil', 'vegetable oil', 'salt', 'sugar', 'soy sauce',
-    'vinegar', 'hot sauce', 'tomato paste', 'canned tomatoes', 'broth',
-    'coconut oil', 'honey', 'mustard', 'mayonnaise', 'ketchup',
-    'worcestershire sauce', 'fish sauce', 'sesame oil', 'balsamic vinegar',
+    'olive oil', 'vegetable oil', 'canola oil', 'coconut oil', 'sesame oil',
+    'salt', 'sea salt', 'sugar', 'brown sugar', 'powdered sugar',
+    'soy sauce', 'tamari', 'vinegar', 'white vinegar', 'apple cider vinegar',
+    'balsamic vinegar', 'rice vinegar', 'red wine vinegar', 'hot sauce',
+    'sriracha', 'tomato paste', 'canned tomatoes', 'crushed tomatoes',
+    'tomato sauce', 'salsa', 'broth', 'chicken broth', 'beef broth',
+    'vegetable broth', 'stock', 'honey', 'maple syrup', 'molasses',
+    'mustard', 'dijon mustard', 'mayonnaise', 'ketchup', 'bbq sauce',
+    'worcestershire sauce', 'fish sauce', 'oyster sauce', 'hoisin sauce',
+    'peanut butter', 'tahini', 'cornstarch', 'baking soda', 'baking powder',
+    'yeast', 'cocoa powder', 'chocolate chips', 'nuts', 'almonds', 'walnuts',
+    'peanuts', 'cashews', 'pine nuts',
   ],
 };
 
@@ -55,7 +91,7 @@ const QUICK_STAPLES = [
   'butter', 'eggs', 'flour', 'sugar', 'soy sauce',
 ];
 
-const ALL_INGREDIENTS = Object.values(INGREDIENT_CATEGORIES).flat();
+const ALL_INGREDIENTS = [...new Set(Object.values(INGREDIENT_CATEGORIES).flat())];
 
 // ─── Scoring ────────────────────────────────────────────────────────────────
 
