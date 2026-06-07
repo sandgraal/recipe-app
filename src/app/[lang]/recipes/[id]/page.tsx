@@ -310,6 +310,7 @@ export default function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
   const [cookMode, setCookMode] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
@@ -342,8 +343,22 @@ export default function RecipeDetailPage() {
 
   async function handleDelete() {
     setDeleting(true);
-    await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
-    router.push(`/${lang}`);
+    setDeleteError('');
+    try {
+      const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE', cache: 'no-store' });
+      if (!res.ok) {
+        setDeleting(false);
+        setDeleteError(t(locale, 'recipe_delete_failed'));
+        return;
+      }
+      // Navigate home and invalidate the router cache so the deleted recipe
+      // doesn't linger in the (cached) list — the classic post-mutation refresh.
+      router.push(`/${lang}`);
+      router.refresh();
+    } catch {
+      setDeleting(false);
+      setDeleteError(t(locale, 'recipe_delete_failed_conn'));
+    }
   }
 
   if (loading) {
@@ -408,7 +423,7 @@ export default function RecipeDetailPage() {
                   style={{ borderRadius: 'var(--radius-sm)', borderColor: 'var(--border)', color: 'var(--text)' }}>
                   {t(locale, 'recipe_edit')}
                 </Link>
-                <button onClick={() => setShowConfirm(true)}
+                <button onClick={() => { setDeleteError(''); setShowConfirm(true); }}
                   className="px-3 py-1.5 text-sm font-medium text-white"
                   style={{ borderRadius: 'var(--radius-sm)', background: '#e05252' }}>
                   {t(locale, 'recipe_delete')}
@@ -598,17 +613,20 @@ export default function RecipeDetailPage() {
             <h3 className="text-xl mb-2" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
               {t(locale, 'recipe_delete_title')}
             </h3>
-            <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
+            <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
               {t(locale, 'recipe_delete_body', { title: displayTitle })}
             </p>
+            {deleteError && (
+              <p className="text-sm mb-4" style={{ color: '#e05252' }}>{deleteError}</p>
+            )}
             <div className="flex gap-3">
               <button onClick={handleDelete} disabled={deleting}
                 className="flex-1 px-4 py-2 text-sm font-medium text-white"
                 style={{ background: '#e05252', borderRadius: 'var(--radius-sm)' }}>
                 {deleting ? t(locale, 'recipe_deleting') : t(locale, 'recipe_delete')}
               </button>
-              <button onClick={() => setShowConfirm(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium border"
+              <button onClick={() => { setShowConfirm(false); setDeleteError(''); }} disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm font-medium border disabled:opacity-50"
                 style={{ borderColor: 'var(--border)', color: 'var(--text)', borderRadius: 'var(--radius-sm)' }}>
                 {t(locale, 'recipe_delete_cancel')}
               </button>

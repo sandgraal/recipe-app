@@ -7,8 +7,11 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+// Always serve fresh data so edits/deletes reflect immediately.
+const NO_STORE = { 'Cache-Control': 'no-store, must-revalidate' };
+
 function json(data: unknown, init?: ResponseInit) {
-  return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
+  return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
 }
 
 export async function OPTIONS() {
