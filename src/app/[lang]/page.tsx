@@ -207,7 +207,8 @@ export default function HomePage() {
       .then(d => {
         const rs: Recipe[] = d.recipes || [];
         setAllRecipes(rs);
-        const uniqueCuisines = [...new Set(rs.map(r => r.cuisine).filter(Boolean))] as string[];
+        const uniqueCuisines = [...new Set(rs.map(r => r.cuisine).filter((c): c is string => !!c))]
+          .filter(c => c.trim().toLowerCase() !== 'costa rican') as string[];
         // Build a clean, popularity-sorted tag list for browsing: drop the
         // app-wide "Costa Rican" tag (it's on nearly everything) and one-off
         // noise tags (count < 2) so the filters stay meaningful.
@@ -216,7 +217,7 @@ export default function HomePage() {
           if (tg) tagCount.set(tg, (tagCount.get(tg) || 0) + 1);
         }));
         const uniqueTags = [...tagCount.entries()]
-          .filter(([tg, n]) => tg !== 'Costa Rican' && n >= 2)
+          .filter(([tg, n]) => tg.trim().toLowerCase() !== 'costa rican' && n >= 2)
           .sort((a, b) => b[1] - a[1])
           .map(([tg]) => tg);
         setCuisines(uniqueCuisines);
@@ -259,8 +260,9 @@ export default function HomePage() {
   // Regional rows: only meaningful sub-cuisines (e.g. Chinese, Caribbean).
   // Skip the generic "Costa Rican" cuisine — it's ~the whole collection, so a
   // row of it just duplicates the full list.
+  const featuredCuisineNames = new Set(['Chinese', 'Caribbean']);
   const cuisineGroups = cuisines
-    .filter(c => c !== 'Costa Rican')
+    .filter(c => featuredCuisineNames.has(c))
     .map(c => ({ cuisine: c, recipes: featurable.filter(r => r.cuisine === c) }))
     .filter(g => g.recipes.length >= 3)
     .slice(0, 3);
@@ -268,7 +270,7 @@ export default function HomePage() {
   // Food-type rows: the most popular meaningful tags, by count. Excludes tags
   // already represented as cuisine rows (Caribbean/Chinese) so rows don't
   // duplicate each other. allTags is already cleaned (no "Costa Rican", no noise).
-  const cuisineTagNames = new Set(['Caribbean', 'Chinese']);
+  const cuisineTagNames = new Set(cuisineGroups.map(g => g.cuisine));
   const tagGroups = allTags
     .filter(tag => !cuisineTagNames.has(tag))
     .map(tag => ({ tag, recipes: featurable.filter(r => r.tags?.includes(tag)) }))
