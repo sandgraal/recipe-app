@@ -234,7 +234,7 @@ export default function HomePage() {
   // Only recipes with a photo are eligible for the curated first-load sections
   // (hero + rows). Photoless recipes stay fully reachable via search and the
   // "view all" grids — they just aren't featured with an empty placeholder.
-  const featurable = allRecipes.filter(r => r.image_url);
+const featurable = allRecipes.filter(r => !!r.image_url?.trim());
 
   const recent = featurable.slice(0, 20);
   const hero = recent[0];
