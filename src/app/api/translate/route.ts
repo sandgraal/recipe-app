@@ -39,9 +39,15 @@ export async function POST(req: NextRequest) {
       return json({ success: true, cached: true });
     }
 
+    // Distinguish "translation not configured" from a genuine failure so the
+    // client gets an accurate status rather than a misleading parse error.
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return json({ error: 'Translation is not configured' }, { status: 503 });
+    }
+
     const spanishFields = await buildSpanishFields(recipeRow);
     if (!spanishFields) {
-      return json({ error: 'Translation response was not valid JSON' }, { status: 500 });
+      return json({ error: 'Could not generate a valid translation' }, { status: 502 });
     }
 
     // Write to Supabase

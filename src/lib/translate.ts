@@ -82,7 +82,13 @@ Return format:
   const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return null;
 
-  const translated = JSON.parse(jsonMatch[0]);
+  let translated;
+  try {
+    translated = JSON.parse(jsonMatch[0]);
+  } catch {
+    // Malformed model output — honor the null contract instead of throwing.
+    return null;
+  }
 
   const stepsEs: Step[] = (recipe.steps || []).map((s, idx) => ({
     ...s,

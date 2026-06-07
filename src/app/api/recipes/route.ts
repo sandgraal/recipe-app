@@ -54,13 +54,17 @@ export async function POST(req: NextRequest) {
     try {
       const spanishFields = await buildSpanishFields(data);
       if (spanishFields) {
-        const { data: updated } = await supabase
+        const { data: updated, error: updateError } = await supabase
           .from('recipes')
           .update(spanishFields)
           .eq('id', data.id)
           .select()
           .single();
-        if (updated) recipe = updated;
+        if (updateError) {
+          console.error('Auto-translate save failed:', updateError);
+        } else if (updated) {
+          recipe = updated;
+        }
       }
     } catch (err) {
       console.error('Auto-translate on create failed:', err);
