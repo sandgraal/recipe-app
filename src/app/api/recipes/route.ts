@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { buildSpanishFields } from '@/lib/translate';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -44,5 +45,27 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { data, error } = await supabase.from('recipes').insert([body]).select().single();
   if (error) return json({ error: error.message }, { status: 500 });
-  return json({ recipe: data }, { status: 201 });
+
+  // Auto-translate to Spanish on creation so new recipes are bilingual
+  // immediately. Best-effort: if translation is unavailable or fails, the
+  // recipe still publishes and falls back to on-demand translation in the UI.
+  let recipe = data;
+  if (data && !data.title_es) {
+    try {
+      const spanishFields = await buildSpanishFields(data);
+      if (spanishFields) {
+        const { data: updated } = await supabase
+          .from('recipes')
+          .update(spanishFields)
+          .eq('id', data.id)
+          .select()
+          .single();
+        if (updated) recipe = updated;
+      }
+    } catch (err) {
+      console.error('Auto-translate on create failed:', err);
+    }
+  }
+
+  return json({ recipe }, { status: 201 });
 }
