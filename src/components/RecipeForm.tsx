@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { RecipeFormData, Ingredient, Step } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import { getAdminHeaders } from '@/lib/useAdmin';
 
 interface Props {
   initialData?: Partial<RecipeFormData>;
@@ -98,14 +99,14 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
     } else if (recipeId) {
       const res = await fetch(`/api/recipes/${recipeId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
         body: JSON.stringify(data),
       });
       if (res.ok) router.push(`/${lang}/recipes/${recipeId}`);
     } else {
       const res = await fetch('/api/recipes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
         body: JSON.stringify(data),
       });
       if (res.ok) {

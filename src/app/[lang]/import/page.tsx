@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { RecipeFormData } from '@/lib/types';
 import Link from 'next/link';
 import { t, type Locale } from '@/lib/i18n';
+import { getAdminHeaders } from '@/lib/useAdmin';
 
 type Tab = 'url' | 'text' | 'photo' | 'manual';
 
@@ -92,7 +93,7 @@ export default function ImportPage() {
     try {
       const res = await fetch('/api/import/url', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
         body: JSON.stringify({ url: urlInput }),
       });
       const data = await res.json();
@@ -110,7 +111,7 @@ export default function ImportPage() {
     try {
       const res = await fetch('/api/import/text', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
         body: JSON.stringify({ text: textInput }),
       });
       const data = await res.json();
@@ -127,7 +128,7 @@ export default function ImportPage() {
     try {
       const fd = new FormData();
       fd.append('image', file);
-      const res = await fetch('/api/import/photo', { method: 'POST', body: fd });
+      const res = await fetch('/api/import/photo', { method: 'POST', headers: { ...getAdminHeaders() }, body: fd });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setRecipe(data.recipe);
@@ -143,7 +144,7 @@ export default function ImportPage() {
     try {
       const res = await fetch('/api/recipes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
         body: JSON.stringify(recipe),
       });
       const data = await res.json();

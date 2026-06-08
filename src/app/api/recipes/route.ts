@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 import { buildSpanishFields } from '@/lib/translate';
+import { writeAllowed } from '@/lib/adminAuth';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -44,6 +45,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const supabase = getSupabase();
   const body = await req.json();
   const { data, error } = await supabase.from('recipes').insert([body]).select().single();

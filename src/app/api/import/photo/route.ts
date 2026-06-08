@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
+import { writeAllowed } from '@/lib/adminAuth';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +18,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const client = new Anthropic();
   const supabase = getSupabase();
 
