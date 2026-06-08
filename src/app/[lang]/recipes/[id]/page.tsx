@@ -10,7 +10,7 @@ import {
   recipeTitle, recipeDescription, recipeNotes, recipeSteps,
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
-import { useAdmin } from '@/lib/useAdmin';
+import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -345,7 +345,7 @@ export default function RecipeDetailPage() {
     setDeleting(true);
     setDeleteError('');
     try {
-      const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE', cache: 'no-store' });
+      const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE', cache: 'no-store', headers: { ...getAdminHeaders() } });
       if (!res.ok) {
         setDeleting(false);
         setDeleteError(t(locale, 'recipe_delete_failed'));

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { writeAllowed } from '@/lib/adminAuth';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -27,6 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const supabase = getSupabase();
   const { id } = await params;
   const body = await req.json();
@@ -40,7 +42,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   return json({ recipe: data });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const supabase = getSupabase();
   const { id } = await params;
   const { error } = await supabase.from('recipes').delete().eq('id', id);

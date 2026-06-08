@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Recipe } from '@/lib/types';
 import { t, localizeCategory, localizeIngredient, type Locale } from '@/lib/i18n';
-import { useAdmin } from '@/lib/useAdmin';
+import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 
 // ─── Pantry data ────────────────────────────────────────────────────────────
 
@@ -392,7 +392,7 @@ export default function IdentifyPage() {
     };
     const res = await fetch('/api/recipes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
       body: JSON.stringify(recipe),
     });
     if (res.ok) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { writeAllowed } from '@/lib/adminAuth';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +17,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const client = new Anthropic();
   const { text } = await req.json();
   if (!text) return json({ error: 'Text required' }, { status: 400 });

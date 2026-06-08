@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { writeAllowed } from '@/lib/adminAuth';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -80,6 +81,7 @@ function extractGalleryImages(rawHtml: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const client = new Anthropic();
   const { url } = await req.json();
   if (!url) return json({ error: 'URL required' }, { status: 400 });
