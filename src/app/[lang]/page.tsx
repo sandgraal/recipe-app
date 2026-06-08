@@ -207,10 +207,21 @@ export default function HomePage() {
       .then(d => {
         const rs: Recipe[] = d.recipes || [];
         setAllRecipes(rs);
-        const uniqueCuisines = [...new Set(rs.map(r => r.cuisine).filter(Boolean))] as string[];
-        const uniqueTags = [...new Set(rs.flatMap(r => r.tags || []).filter(Boolean))] as string[];
+        const uniqueCuisines = [...new Set(rs.map(r => r.cuisine).filter((c): c is string => !!c))]
+          .filter(c => c.trim().toLowerCase() !== 'costa rican') as string[];
+        // Build a clean, popularity-sorted tag list for browsing: drop the
+        // app-wide "Costa Rican" tag (it's on nearly everything) and one-off
+        // noise tags (count < 2) so the filters stay meaningful.
+        const tagCount = new Map<string, number>();
+        rs.forEach(r => (r.tags || []).forEach(tg => {
+          if (tg) tagCount.set(tg, (tagCount.get(tg) || 0) + 1);
+        }));
+        const uniqueTags = [...tagCount.entries()]
+          .filter(([tg, n]) => tg.trim().toLowerCase() !== 'costa rican' && n >= 2)
+          .sort((a, b) => b[1] - a[1])
+          .map(([tg]) => tg);
         setCuisines(uniqueCuisines);
-        setAllTags(uniqueTags.slice(0, 20));
+        setAllTags(uniqueTags.slice(0, 18));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -246,15 +257,29 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
     return mins > 0 && mins <= 30;
   }).slice(0, 12);
 
+  // Regional rows: any meaningful sub-cuisine with enough recipes (in practice
+  // the "Costa Rican (Chinese)" and "Costa Rican (Caribbean)" variants). The
+  // generic "Costa Rican" cuisine is already excluded upstream — a row of it
+  // would just duplicate the full list.
   const cuisineGroups = cuisines
+    .filter(c => c.trim().toLowerCase() !== 'costa rican')
     .map(c => ({ cuisine: c, recipes: featurable.filter(r => r.cuisine === c) }))
     .filter(g => g.recipes.length >= 3)
     .slice(0, 3);
 
+  // Food-type rows: the most popular meaningful tags, by count. Exclude any tag
+  // already represented by a rendered cuisine row — matched by substring so the
+  // "Caribbean"/"Chinese" tags drop out against "Costa Rican (Caribbean)" /
+  // "(Chinese)" cuisine rows. Derived from the actual cuisineGroups, not hard-coded.
+  const cuisineTagNames = new Set<string>();
+  cuisineGroups.forEach(g => allTags.forEach(tag => {
+    if (g.cuisine.toLowerCase().includes(tag.toLowerCase())) cuisineTagNames.add(tag);
+  }));
   const tagGroups = allTags
-    .slice(0, 2)
+    .filter(tag => !cuisineTagNames.has(tag))
     .map(tag => ({ tag, recipes: featurable.filter(r => r.tags?.includes(tag)) }))
-    .filter(g => g.recipes.length >= 3);
+    .filter(g => g.recipes.length >= 3)
+    .slice(0, 6);
 
   const greeting = getGreeting(locale);
   const totalCount = allRecipes.length;
