@@ -444,7 +444,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
             {allImages.length > 1 && (
               <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
                 {allImages.map((img, i) => (
-                  <button key={i} onClick={() => setActiveImg(i)}
+                  <button key={i} aria-label={locale === 'es' ? `Ver imagen ${i + 1}` : `View image ${i + 1}`} onClick={() => setActiveImg(i)}
                     className="relative flex-shrink-0 overflow-hidden transition-all"
                     style={{ width: 72, height: 52, borderRadius: 'var(--radius-sm)', border: `2px solid ${i === activeImg ? 'var(--secondary)' : 'transparent'}` }}>
                     <Image src={img} alt="" fill className="object-cover" sizes="72px" />
