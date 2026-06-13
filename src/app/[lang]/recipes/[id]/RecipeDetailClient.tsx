@@ -50,7 +50,8 @@ function scaleAmount(amount: string, multiplier: number): string {
 
 // ── Timer ────────────────────────────────────────────────────────────────────
 
-function StepTimer({ minutes }: { minutes: number }) {
+function StepTimer({ minutes, lang = 'en' }: { minutes: number; lang?: Locale }) {
+  const es = lang === 'es';
   const [secs, setSecs] = useState(minutes * 60);
   const [running, setRunning] = useState(false);
   const interval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -72,21 +73,24 @@ function StepTimer({ minutes }: { minutes: number }) {
   return (
     <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 text-xs font-medium"
       style={{ background: done ? '#dcfce7' : 'var(--bg)', border: `1.5px solid ${done ? '#22c55e' : 'var(--border)'}`, borderRadius: 'var(--radius-sm)', color: done ? '#166534' : 'var(--muted)' }}>
-      <svg width="28" height="6" viewBox="0 0 28 6">
+      <svg width="28" height="6" viewBox="0 0 28 6" aria-hidden="true">
         <rect x="0" y="1" width="28" height="4" rx="2" fill="var(--border)" />
         <rect x="0" y="1" width={28 * (1 - pct / 100)} height="4" rx="2" fill={done ? '#22c55e' : 'var(--secondary)'} />
       </svg>
       <span className="font-mono">{done ? '✓ Done' : `${m}:${s}`}</span>
       {!done && (
         <button onClick={() => setRunning(r => !r)}
+          aria-label={running ? (es ? 'Pausar temporizador' : 'Pause timer') : (es ? 'Iniciar temporizador' : 'Start timer')}
+          aria-pressed={running}
           className="px-1.5 py-0.5 rounded text-white text-xs"
           style={{ background: running ? '#f16745' : 'var(--secondary)' }}>
-          {running ? '⏸' : '▶'}
+          <span aria-hidden="true">{running ? '⏸' : '▶'}</span>
         </button>
       )}
       {!running && secs < minutes * 60 && (
         <button onClick={() => { setSecs(minutes * 60); setRunning(false); }}
-          className="opacity-50 hover:opacity-100 text-xs">↺</button>
+          aria-label={es ? 'Reiniciar temporizador' : 'Reset timer'}
+          className="opacity-50 hover:opacity-100 text-xs"><span aria-hidden="true">↺</span></button>
       )}
     </div>
   );
@@ -235,7 +239,7 @@ function CookMode({ recipe, lang, steps, onClose }: {
         </p>
         {step && extractMinutes(step.text) && (
           <div className="mt-6">
-            <StepTimer minutes={extractMinutes(step.text)!} />
+            <StepTimer minutes={extractMinutes(step.text)!} lang={lang} />
           </div>
         )}
       </div>
@@ -336,14 +340,15 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
 
   const loadRecipe = useCallback(() => {
     fetch(`/api/recipes/${id}`)
-      .then(r => r.json())
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then(d => {
         if (!d.recipe) return;
         setRecipe(d.recipe);
         const s = d.recipe.servings || 1;
         setServings(s);
         setOrigServings(s);
-      });
+      })
+      .catch(err => console.error('failed to reload recipe', err));
   }, [id]);
 
   const toggleCheck = useCallback((i: number) => {
@@ -536,12 +541,14 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
                   <div className="flex items-center gap-1 border px-2 py-1 text-xs"
                     style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)' }}>
                     <button onClick={() => setServings(s => Math.max(1, s - 1))} className="w-5 text-center font-bold"
-                      style={{ color: 'var(--accent)' }}>−</button>
-                    <span className="w-14 text-center font-medium" style={{ color: 'var(--text)' }}>
+                      aria-label={locale === 'es' ? 'Menos porciones' : 'Fewer servings'}
+                      style={{ color: 'var(--accent)' }}><span aria-hidden="true">−</span></button>
+                    <span className="w-14 text-center font-medium" style={{ color: 'var(--text)' }} aria-live="polite">
                       {servings} {t(locale, 'recipe_srv')}
                     </span>
                     <button onClick={() => setServings(s => s + 1)} className="w-5 text-center font-bold"
-                      style={{ color: 'var(--accent)' }}>+</button>
+                      aria-label={locale === 'es' ? 'Más porciones' : 'More servings'}
+                      style={{ color: 'var(--accent)' }}><span aria-hidden="true">+</span></button>
                   </div>
                 )}
               </div>
@@ -550,7 +557,12 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
                   {recipe.ingredients.map((ing, i) => {
                     const translated = recipeIngredientItem(recipe, i, locale);
                     return (
-                      <li key={i} onClick={() => toggleCheck(i)}
+                      <li key={i}
+                        role="checkbox"
+                        tabIndex={0}
+                        aria-checked={checked.has(i)}
+                        onClick={() => toggleCheck(i)}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCheck(i); } }}
                         className="flex gap-3 text-sm py-1.5 border-b last:border-b-0 cursor-pointer"
                         style={{ borderColor: 'var(--border)', opacity: checked.has(i) ? 0.4 : 1 }}>
                         <span className="w-4 h-4 mt-0.5 flex-shrink-0 rounded border flex items-center justify-center transition-colors"
@@ -598,7 +610,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
                       </span>
                       <div className="flex-1">
                         <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>{step.text}</p>
-                        {mins && <StepTimer minutes={mins} />}
+                        {mins && <StepTimer minutes={mins} lang={locale} />}
                       </div>
                     </li>
                   );
