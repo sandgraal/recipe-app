@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 
@@ -6,6 +6,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Recetas · Creaciones Colibrí",
   description: "A personal recipe collection — inspired by the flavors of Costa Rica and beyond.",
+  // iOS standalone (Add to Home Screen) polish: full-screen, branded title.
+  appleWebApp: { capable: true, title: "Colibrí", statusBarStyle: "default" },
+};
+
+// Match the browser UI (Android status bar, etc.) to the page background in each
+// theme — cream in light, warm near-black in dark. Mirrors the globals.css tokens.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fdf8f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#17120f" },
+  ],
 };
 
 // Root layout is minimal — nav/footer live in [lang]/layout.tsx.
