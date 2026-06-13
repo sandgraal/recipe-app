@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { Recipe } from '@/lib/types';
+import { RecipeCardData } from '@/lib/types';
 import { recipeTitle, recipeTags, formatTime, localizeCuisine, type Locale } from '@/lib/i18n';
 
 const GRADIENTS = [
@@ -16,7 +16,7 @@ const GRADIENTS = [
 
 type CardSize = 'hero' | 'standard' | 'compact';
 
-export default function RecipeCard({ recipe, size = 'standard' }: { recipe: Recipe; size?: CardSize }) {
+export default function RecipeCard({ recipe, size = 'standard' }: { recipe: RecipeCardData; size?: CardSize }) {
   const params = useParams<{ lang: string }>();
   const lang = params?.lang || 'en';
   const gradient = GRADIENTS[recipe.title.charCodeAt(0) % GRADIENTS.length];
@@ -28,7 +28,7 @@ export default function RecipeCard({ recipe, size = 'standard' }: { recipe: Reci
 
 // ── Hero card (large feature, full bleed, overlay text) ─────────────────────
 
-function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string; lang: string }) {
+function HeroCard({ recipe, gradient, lang }: { recipe: RecipeCardData; gradient: string; lang: string }) {
   const locale = lang as Locale;
   const title = recipeTitle(recipe, locale);
   const tags = recipeTags(recipe, locale);
@@ -80,7 +80,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
 
 // ── Standard card (grid view) ────────────────────────────────────────────────
 
-function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string; lang: string }) {
+function StandardCard({ recipe, gradient, lang }: { recipe: RecipeCardData; gradient: string; lang: string }) {
   const locale = lang as Locale;
   const title = recipeTitle(recipe, locale);
   const tags = recipeTags(recipe, locale);
@@ -142,7 +142,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
 
 // ── Compact card (horizontal scroll rows) ────────────────────────────────────
 
-function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string; lang: string }) {
+function CompactCard({ recipe, gradient, lang }: { recipe: RecipeCardData; gradient: string; lang: string }) {
   const locale = lang as Locale;
   const title = recipeTitle(recipe, locale);
   return (

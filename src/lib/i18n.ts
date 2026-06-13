@@ -337,7 +337,7 @@ export function t(
 
 // ── Recipe field helpers (falls back to English if no translation) ────────────
 
-export function recipeTitle(recipe: Recipe, lang: Locale): string {
+export function recipeTitle(recipe: Pick<Recipe, 'title' | 'title_es'>, lang: Locale): string {
   return (lang === 'es' && recipe.title_es) ? recipe.title_es : recipe.title;
 }
 
@@ -368,7 +368,7 @@ export function recipeIngredientItem(
   return { item: ing.item, notes: ing.notes };
 }
 
-export function recipeTags(recipe: Recipe, lang: Locale): string[] {
+export function recipeTags(recipe: Pick<Recipe, 'tags' | 'tags_es'>, lang: Locale): string[] {
   return (lang === 'es' && recipe.tags_es && recipe.tags_es.length > 0)
     ? recipe.tags_es
     : (recipe.tags || []);

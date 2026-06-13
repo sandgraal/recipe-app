@@ -42,6 +42,11 @@ export interface Recipe {
   translated_at?: string | null;
 }
 
+export type RecipeCardData = Pick<
+  Recipe,
+  'id' | 'title' | 'title_es' | 'image_url' | 'cuisine' | 'tags' | 'tags_es' | 'total_time' | 'servings' | 'created_at'
+>;
+
 export type RecipeFormData = Omit<Recipe, 'id' | 'created_at' | 'updated_at' | 'title_es' | 'description_es' | 'notes_es' | 'steps_es' | 'ingredients_es' | 'tags_es' | 'translated_at'>;
 
 export type Locale = 'en' | 'es';
