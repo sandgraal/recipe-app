@@ -2,11 +2,15 @@ import { type Locale } from '@/lib/i18n';
 
 /** Health-goal tags that trigger the non-medical disclaimer. */
 export const HEALTH_TAGS = new Set([
-  'Functional Foods', 'Anti-inflammatory', 'Gut Health', 'Heart Healthy', 'Immune',
+  'functional foods',
+  'anti-inflammatory',
+  'gut health',
+  'heart healthy',
+  'immune',
 ]);
 
 export function hasHealthTag(tags?: string[] | null): boolean {
-  return !!tags?.some(t => HEALTH_TAGS.has(t));
+  return !!tags?.some(t => HEALTH_TAGS.has(t.trim().toLowerCase()));
 }
 
 const TEXT: Record<Locale, string> = {
