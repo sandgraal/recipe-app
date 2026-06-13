@@ -16,7 +16,9 @@ export function isPublicHttpUrl(raw: string): boolean {
   if (host === 'localhost' || host.endsWith('.localhost') || host === '0.0.0.0') return false;
   if (host === '169.254.169.254' || host.endsWith('.internal')) return false;
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
-    const [a, b] = host.split('.').map(Number);
+    const parts = host.split('.').map(Number);
+    if (parts.some(n => !Number.isInteger(n) || n < 0 || n > 255)) return false;
+    const [a, b] = parts;
     if (a === 0 || a === 10 || a === 127 ||
         (a === 172 && b >= 16 && b <= 31) ||
         (a === 192 && b === 168) ||
