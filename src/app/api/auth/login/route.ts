@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_COOKIE, ADMIN_UI_COOKIE } from '@/lib/adminAuth';
+import { ADMIN_COOKIE, ADMIN_UI_COOKIE, adminSessionToken } from '@/lib/adminAuth';
 import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const res = NextResponse.json({ ok: true }, { headers: CORS_HEADERS });
   const secure = process.env.NODE_ENV === 'production';
-  res.cookies.set(ADMIN_COOKIE, secret, { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: MAX_AGE });
+  res.cookies.set(ADMIN_COOKIE, adminSessionToken(secret), { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: MAX_AGE });
   res.cookies.set(ADMIN_UI_COOKIE, '1', { httpOnly: false, secure, sameSite: 'lax', path: '/', maxAge: MAX_AGE });
   return res;
 }

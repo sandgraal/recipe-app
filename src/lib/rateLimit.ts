@@ -13,9 +13,17 @@ type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
 
 export function clientIp(req: NextRequest): string {
+  // Prefer x-real-ip (Vercel sets it to the true client IP). Fall back to the
+  // LAST x-forwarded-for entry — the hop appended by the trusted proxy — since
+  // the earlier entries are client-supplied and spoofable.
+  const real = req.headers.get('x-real-ip');
+  if (real) return real.trim();
   const fwd = req.headers.get('x-forwarded-for');
-  if (fwd) return fwd.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || 'unknown';
+  if (fwd) {
+    const parts = fwd.split(',').map(s => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return 'unknown';
 }
 
 /**

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { createHmac } from 'crypto';
 import { ADMIN_COOKIE, ADMIN_UI_COOKIE } from '@/lib/authConstants';
 
 /**
@@ -17,11 +18,21 @@ import { ADMIN_COOKIE, ADMIN_UI_COOKIE } from '@/lib/authConstants';
  */
 export { ADMIN_COOKIE, ADMIN_UI_COOKIE };
 
+/**
+ * Opaque session value derived from the admin password via HMAC. Stored in the
+ * cookie instead of the raw password, so the password isn't sent on every
+ * request or captured by anything that logs Cookie headers. Possessing the token
+ * still grants access (no server-side store), but it doesn't reveal the secret.
+ */
+export function adminSessionToken(secret: string): string {
+  return createHmac('sha256', secret).update('colibri-admin-session-v1').digest('hex');
+}
+
 export function writeAllowed(req: NextRequest): boolean {
   const secret = process.env.ADMIN_PASSWORD;
   if (!secret) return true; // not configured → open (backward compatible)
   const viaBearer = (req.headers.get('authorization') || '') === `Bearer ${secret}`;
-  const viaCookie = req.cookies.get(ADMIN_COOKIE)?.value === secret;
+  const viaCookie = req.cookies.get(ADMIN_COOKIE)?.value === adminSessionToken(secret);
   return viaBearer || viaCookie;
 }
 
@@ -29,5 +40,5 @@ export function writeAllowed(req: NextRequest): boolean {
 export function isAdminSession(req: NextRequest): boolean {
   const secret = process.env.ADMIN_PASSWORD;
   if (!secret) return false;
-  return req.cookies.get(ADMIN_COOKIE)?.value === secret;
+  return req.cookies.get(ADMIN_COOKIE)?.value === adminSessionToken(secret);
 }

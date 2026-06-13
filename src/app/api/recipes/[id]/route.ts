@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase, getServiceSupabase } from '@/lib/supabase';
 import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
+import { readJsonBody } from '@/lib/requestBody';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
@@ -21,14 +22,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const parsed = await readJsonBody(req);
+  if (!parsed.ok) return json({ error: parsed.error }, { status: parsed.status });
+  const body = parsed.data as Record<string, unknown>;
   const supabase = getServiceSupabase();
   const { id } = await params;
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return json({ error: 'Invalid JSON' }, { status: 400 });
-  }
   const { data, error } = await supabase
     .from('recipes')
     .update({ ...body, updated_at: new Date().toISOString() })
