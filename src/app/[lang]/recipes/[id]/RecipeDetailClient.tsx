@@ -12,7 +12,7 @@ import {
 } from '@/lib/i18n';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
-import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus } from 'lucide-react';
+import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -415,12 +415,19 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
 
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Back + actions */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4" data-no-print>
           <Link href={`/${lang}`} className="inline-flex items-center gap-1 text-sm hover:opacity-70"
             style={{ color: 'var(--muted)' }}>
             {t(locale, 'recipe_back')}
           </Link>
           <div className="flex gap-2">
+            <button onClick={() => window.print()}
+              aria-label={locale === 'es' ? 'Imprimir receta' : 'Print recipe'}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border"
+              style={{ borderRadius: 'var(--radius-sm)', borderColor: 'var(--border)', color: 'var(--text)' }}>
+              <Printer size={14} aria-hidden="true" />
+              <span className="hidden sm:inline">{locale === 'es' ? 'Imprimir' : 'Print'}</span>
+            </button>
             {displaySteps.length > 0 && (
               <button onClick={() => setCookMode(true)}
                 className="px-4 py-1.5 text-sm font-medium text-white"
@@ -631,7 +638,9 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
               </div>
             )}
 
-            <RecipeChat recipe={recipe} lang={locale} />
+            <div data-no-print>
+              <RecipeChat recipe={recipe} lang={locale} />
+            </div>
           </div>
         </div>
       </div>
