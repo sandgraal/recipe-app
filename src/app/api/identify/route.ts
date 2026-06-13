@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { logger } from '@/lib/logger';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -134,7 +135,9 @@ Return ONLY a JSON object (no markdown):
       const parsed = JSON.parse(suggestMatch[0]);
       matchingIds = parsed.matching_recipe_ids || [];
       suggestions = parsed.suggestions || [];
-    } catch { /* ignore */ }
+    } catch (err) {
+      logger.warn('identify: could not parse suggestions JSON', { err: String(err) });
+    }
   }
 
   const fromCollection = collection.filter(r => matchingIds.includes(r.id));

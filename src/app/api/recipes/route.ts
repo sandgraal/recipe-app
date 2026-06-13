@@ -4,6 +4,7 @@ import { buildSpanishFields } from '@/lib/translate';
 import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 import { readJsonBody } from '@/lib/requestBody';
+import { logger } from '@/lib/logger';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
@@ -60,13 +61,13 @@ export async function POST(req: NextRequest) {
           .select()
           .single();
         if (updateError) {
-          console.error('Auto-translate save failed:', updateError);
+          logger.error('recipes: auto-translate save failed', { id: data.id, err: updateError.message });
         } else if (updated) {
           recipe = updated;
         }
       }
     } catch (err) {
-      console.error('Auto-translate on create failed:', err);
+      logger.error('recipes: auto-translate on create failed', { err: String(err) });
     }
   }
 

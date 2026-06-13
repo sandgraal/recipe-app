@@ -12,7 +12,7 @@
  *   CORS at all, so they're unaffected.
  * - Override the allowed origin per-environment with NEXT_PUBLIC_SITE_URL.
  */
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://recipe-app-blush-eta.vercel.app').replace(/\/$/, '');
+import { SITE_URL } from '@/lib/site';
 
 export const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': SITE_URL,

@@ -3,35 +3,11 @@ import Anthropic from '@anthropic-ai/sdk';
 import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { isPublicHttpUrl } from '@/lib/ssrf';
+import { logger } from '@/lib/logger';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
-}
-
-/**
- * SSRF guard: only fetch public http(s) URLs. Blocks localhost, cloud metadata
- * (169.254.169.254), and private/loopback/link-local IP literals. Known residual:
- * DNS rebinding (a public hostname resolving to an internal IP) is not covered
- * here — a fuller fix resolves DNS + pins the IP and disables redirects.
- */
-function isPublicHttpUrl(raw: string): boolean {
-  let u: URL;
-  try { u = new URL(raw); } catch { return false; }
-  if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
-  const host = u.hostname.toLowerCase();
-  if (host === 'localhost' || host.endsWith('.localhost') || host === '0.0.0.0') return false;
-  if (host === '169.254.169.254' || host.endsWith('.internal')) return false;
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
-    const [a, b] = host.split('.').map(Number);
-    if (a === 0 || a === 10 || a === 127 ||
-        (a === 172 && b >= 16 && b <= 31) ||
-        (a === 192 && b === 168) ||
-        (a === 169 && b === 254)) return false;
-  }
-  if (host.includes(':') && (host === '::1' || host.startsWith('fe80') || host.startsWith('fc') || host.startsWith('fd'))) {
-    return false;
-  }
-  return true;
 }
 
 export async function OPTIONS() {
@@ -158,7 +134,8 @@ export async function POST(req: NextRequest) {
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 15000);
-  } catch {
+  } catch (err) {
+    logger.warn('import/url: fetch failed', { url, err: String(err) });
     return json({ error: 'Failed to fetch URL' }, { status: 400 });
   }
 

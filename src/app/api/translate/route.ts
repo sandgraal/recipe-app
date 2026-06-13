@@ -3,6 +3,7 @@ import { getServiceSupabase } from '@/lib/supabase';
 import { buildSpanishFields } from '@/lib/translate';
 import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { logger } from '@/lib/logger';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
@@ -55,13 +56,13 @@ export async function POST(req: NextRequest) {
       .eq('id', recipeId);
 
     if (updateError) {
-      console.error('Supabase update error:', updateError);
+      logger.error('translate: supabase update failed', { recipeId, err: updateError.message });
       return json({ error: 'Failed to save translation' }, { status: 500 });
     }
 
     return json({ success: true });
   } catch (err) {
-    console.error('Translate error:', err);
+    logger.error('translate: failed', { err: String(err) });
     return json({ error: 'Translation failed' }, { status: 500 });
   }
 }
