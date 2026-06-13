@@ -22,8 +22,29 @@ export function isPublicHttpUrl(raw: string): boolean {
         (a === 192 && b === 168) ||
         (a === 169 && b === 254)) return false;
   }
-  if (host.includes(':') && (host === '::1' || host.startsWith('fe80') || host.startsWith('fc') || host.startsWith('fd'))) {
-    return false;
+  if (host.includes(':')) {
+    // IPv6 loopback/unspecified, link-local, and unique-local ranges.
+    if (host === '::1' || host === '::' || host.startsWith('fe80') || host.startsWith('fc') || host.startsWith('fd')) return false;
+
+    // Block IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1 or ::ffff:7f00:1) if it resolves to a blocked IPv4 range.
+    if (host.startsWith('::ffff:') || host.startsWith('0:0:0:0:0:ffff:')) {
+      const tail = host.replace(/^0:0:0:0:0:ffff:|^::ffff:/, '');
+      let ipv4: string | null = null;
+      if (tail.includes('.')) {
+        ipv4 = tail;
+      } else {
+        const parts = tail.split(':');
+        if (parts.length === 2) {
+          const hi = parseInt(parts[0], 16);
+          const lo = parseInt(parts[1], 16);
+          if (!Number.isNaN(hi) && !Number.isNaN(lo)) {
+            const n = (((hi << 16) | lo) >>> 0);
+            ipv4 = [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+          }
+        }
+      }
+      if (ipv4 && !isPublicHttpUrl(`http://${ipv4}`)) return false;
+    }
   }
   return true;
 }
