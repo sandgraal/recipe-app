@@ -6,6 +6,14 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    // Force a modern ECMAScript target so the parser accepts ES2019+ syntax such
+    // as optional catch binding (`catch {}`), which is used throughout. (CI was
+    // intermittently parsing one file with a lower default and erroring on it.)
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      parserOptions: { ecmaVersion: 2023, sourceType: 'module' },
+    },
     rules: {
       // Perf hint, not a correctness bug: several client components legitimately
       // sync state in an effect (e.g. fetch-on-filter, post-mount cookie read).
