@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
+import { CORS_HEADERS } from '@/lib/cors';
+import { checkRateLimit } from '@/lib/rateLimit';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
@@ -17,12 +15,15 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = checkRateLimit(req, 'identify', { limit: 15, windowMs: 60_000 });
+  if (limited) return json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
   const client = new Anthropic();
   const supabase = getSupabase();
 
   const formData = await req.formData();
   const file = formData.get('image') as File | null;
   if (!file) return json({ error: 'Image required' }, { status: 400 });
+  if (file.size > MAX_IMAGE_BYTES) return json({ error: 'Image too large (max 10 MB)' }, { status: 413 });
 
   // If the caller passed an explicit pantry list, use it and skip vision
   const pantryRaw = formData.get('pantry') as string | null;

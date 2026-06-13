@@ -1,19 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { writeAllowed } from '@/lib/adminAuth';
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+import { CORS_HEADERS } from '@/lib/cors';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
 }
 
+/**
+ * SSRF guard: only fetch public http(s) URLs. Blocks localhost, cloud metadata
+ * (169.254.169.254), and private/loopback/link-local IP literals. Known residual:
+ * DNS rebinding (a public hostname resolving to an internal IP) is not covered
+ * here — a fuller fix resolves DNS + pins the IP and disables redirects.
+ */
+function isPublicHttpUrl(raw: string): boolean {
+  let u: URL;
+  try { u = new URL(raw); } catch { return false; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+  const host = u.hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.localhost') || host === '0.0.0.0') return false;
+  if (host === '169.254.169.254' || host.endsWith('.internal')) return false;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    const [a, b] = host.split('.').map(Number);
+    if (a === 0 || a === 10 || a === 127 ||
+        (a === 172 && b >= 16 && b <= 31) ||
+        (a === 192 && b === 168) ||
+        (a === 169 && b === 254)) return false;
+  }
+  if (host.includes(':') && (host === '::1' || host.startsWith('fe80') || host.startsWith('fc') || host.startsWith('fd'))) {
+    return false;
+  }
+  return true;
+}
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
+/**
+ * Fetch following redirects MANUALLY, re-validating every hop against
+ * isPublicHttpUrl — so a public URL can't 30x-redirect into a private/internal
+ * target (the redirect-based SSRF bypass). Caps redirect depth.
+ */
+async function safeFetch(initialUrl: string, maxRedirects = 4): Promise<Response> {
+  let current = initialUrl;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    if (!isPublicHttpUrl(current)) throw new Error('blocked-url');
+    const res = await fetch(current, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecipeBot/1.0)' },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (!loc) return res;
+      current = new URL(loc, current).toString();
+      continue;
+    }
+    return res;
+  }
+  throw new Error('too-many-redirects');
 }
 
 function extractOgImage(rawHtml: string): string | null {
@@ -82,19 +129,24 @@ function extractGalleryImages(rawHtml: string): string[] {
 
 export async function POST(req: NextRequest) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const limited = checkRateLimit(req, 'import-url', { limit: 10, windowMs: 60_000 });
+  if (limited) return json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
   const client = new Anthropic();
-  const { url } = await req.json();
-  if (!url) return json({ error: 'URL required' }, { status: 400 });
+  let url: string | undefined;
+  try {
+    ({ url } = await req.json());
+  } catch {
+    return json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+  if (!url || typeof url !== 'string') return json({ error: 'URL required' }, { status: 400 });
+  if (!isPublicHttpUrl(url)) return json({ error: 'That URL is not allowed' }, { status: 400 });
 
   let html = '';
   let ogImage: string | null = null;
   let galleryImages: string[] = [];
 
   try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecipeBot/1.0)' },
-      signal: AbortSignal.timeout(15000),
-    });
+    const res = await safeFetch(url);
     const rawHtml = await res.text();
     ogImage = extractOgImage(rawHtml);
     galleryImages = extractGalleryImages(rawHtml);

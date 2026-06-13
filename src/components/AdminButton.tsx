@@ -13,20 +13,21 @@ export default function AdminButton({ lang }: Props) {
   const locale = lang as Locale;
   const { isAdmin, loaded, login, logout } = useAdmin();
   const [showModal, setShowModal] = useState(false);
-  const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (!loaded) return null;
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    const ok = login(user.trim(), pass);
+    setSubmitting(true);
+    setError('');
+    const ok = await login(pass);
+    setSubmitting(false);
     if (ok) {
       setShowModal(false);
-      setUser('');
       setPass('');
-      setError('');
     } else {
       setError('Invalid credentials');
     }
@@ -83,19 +84,11 @@ export default function AdminButton({ lang }: Props) {
             </p>
             <form onSubmit={handleLogin} className="space-y-3">
               <input
-                type="text"
-                value={user}
-                onChange={e => setUser(e.target.value)}
-                placeholder="Username"
-                autoFocus
-                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
-              />
-              <input
                 type="password"
                 value={pass}
                 onChange={e => setPass(e.target.value)}
                 placeholder="Password"
+                autoFocus
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
               />
@@ -105,14 +98,15 @@ export default function AdminButton({ lang }: Props) {
               <div className="flex gap-2 pt-1">
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white"
+                  disabled={submitting}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-60"
                   style={{ background: 'var(--secondary)' }}
                 >
-                  Sign in
+                  {submitting ? 'Signing in…' : 'Sign in'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setError(''); setUser(''); setPass(''); }}
+                  onClick={() => { setShowModal(false); setError(''); setPass(''); }}
                   className="flex-1 py-2.5 rounded-xl text-sm font-medium border"
                   style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
                 >

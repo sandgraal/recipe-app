@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabase, getServiceSupabase } from '@/lib/supabase';
 import { buildSpanishFields } from '@/lib/translate';
 import { writeAllowed } from '@/lib/adminAuth';
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-// Always serve fresh data so mutations (create/delete) reflect immediately.
-const NO_STORE = { 'Cache-Control': 'no-store, must-revalidate' };
+import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
+import { readJsonBody } from '@/lib/requestBody';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
@@ -46,9 +39,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
-  const supabase = getSupabase();
-  const body = await req.json();
-  const { data, error } = await supabase.from('recipes').insert([body]).select().single();
+  const parsed = await readJsonBody(req);
+  if (!parsed.ok) return json({ error: parsed.error }, { status: parsed.status });
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase.from('recipes').insert([parsed.data]).select().single();
   if (error) return json({ error: error.message }, { status: 500 });
 
   // Auto-translate to Spanish on creation so new recipes are bilingual

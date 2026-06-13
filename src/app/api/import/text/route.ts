@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { writeAllowed } from '@/lib/adminAuth';
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+import { CORS_HEADERS } from '@/lib/cors';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { readJsonBody } from '@/lib/requestBody';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
@@ -18,9 +15,13 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const limited = checkRateLimit(req, 'import-text', { limit: 15, windowMs: 60_000 });
+  if (limited) return json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
   const client = new Anthropic();
-  const { text } = await req.json();
-  if (!text) return json({ error: 'Text required' }, { status: 400 });
+  const parsed = await readJsonBody(req);
+  if (!parsed.ok) return json({ error: parsed.error }, { status: parsed.status });
+  const text = (parsed.data as { text?: unknown }).text;
+  if (!text || typeof text !== 'string') return json({ error: 'Text required' }, { status: 400 });
 
   const message = await client.messages.create({
     model: 'claude-opus-4-5',
