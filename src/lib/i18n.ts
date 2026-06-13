@@ -6,7 +6,7 @@ export const DEFAULT_LOCALE: Locale = 'en';
 
 // ── UI string dictionary ─────────────────────────────────────────────────────
 
-const translations = {
+export const translations = {
   en: {
     // Nav
     nav_browse: 'Browse',

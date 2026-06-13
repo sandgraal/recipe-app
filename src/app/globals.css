@@ -159,3 +159,20 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: var(--shadow);
   }
 }
+
+/* Print: a clean, ink-friendly recipe sheet. Hides interactive chrome and forces
+   black-on-white so a recipe can be printed/PDF'd for the kitchen. Elements
+   marked [data-no-print] (nav actions, translate banner, AI chat) are removed. */
+@media print {
+  :root {
+    --bg: #fff; --card: #fff; --text: #000; --muted: #333;
+    --border: #bbb; --note-bg: #f4f4f4;
+  }
+  body { background: #fff !important; color: #000 !important; }
+  nav, footer, button, input, textarea, [data-no-print] { display: none !important; }
+  main { padding: 0 !important; }
+  a[href]::after { content: '' !important; }
+  /* keep list items and steps from splitting awkwardly across pages */
+  li, h1, h2, h3, img { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+}
