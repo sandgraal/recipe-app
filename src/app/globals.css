@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* Creaciones Colibrí palette (light) */
   --bg: #fdf8f3;
