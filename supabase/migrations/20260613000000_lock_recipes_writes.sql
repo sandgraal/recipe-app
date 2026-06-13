@@ -21,5 +21,7 @@ drop policy if exists "Public delete" on public.recipes;
 
 -- Belt-and-suspenders: remove table-level write grants from the anon/authenticated
 -- roles so PostgREST cannot write even if a permissive policy is re-added later.
--- (service_role bypasses both grants and RLS, so server writes are unaffected.)
+-- (service_role bypasses RLS and is NOT targeted by this REVOKE — it keeps its own
+-- privileges — so server-side writes are unaffected. Note: in Postgres BYPASSRLS
+-- only affects RLS, not table GRANTs; this REVOKE is scoped to anon/authenticated.)
 revoke insert, update, delete, truncate on public.recipes from anon, authenticated;

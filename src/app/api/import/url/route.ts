@@ -38,6 +38,31 @@ export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
 
+/**
+ * Fetch following redirects MANUALLY, re-validating every hop against
+ * isPublicHttpUrl — so a public URL can't 30x-redirect into a private/internal
+ * target (the redirect-based SSRF bypass). Caps redirect depth.
+ */
+async function safeFetch(initialUrl: string, maxRedirects = 4): Promise<Response> {
+  let current = initialUrl;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    if (!isPublicHttpUrl(current)) throw new Error('blocked-url');
+    const res = await fetch(current, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecipeBot/1.0)' },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (!loc) return res;
+      current = new URL(loc, current).toString();
+      continue;
+    }
+    return res;
+  }
+  throw new Error('too-many-redirects');
+}
+
 function extractOgImage(rawHtml: string): string | null {
   const patterns = [
     /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
@@ -121,10 +146,7 @@ export async function POST(req: NextRequest) {
   let galleryImages: string[] = [];
 
   try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecipeBot/1.0)' },
-      signal: AbortSignal.timeout(15000),
-    });
+    const res = await safeFetch(url);
     const rawHtml = await res.text();
     ogImage = extractOgImage(rawHtml);
     galleryImages = extractGalleryImages(rawHtml);
