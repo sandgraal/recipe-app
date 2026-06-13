@@ -40,8 +40,14 @@ export default function ThemeToggle({ lang = 'en' }: { lang?: string }) {
     if (!mounted || theme !== 'system') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = () => { document.documentElement.dataset.theme = mq.matches ? 'dark' : 'light'; };
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
+
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
   }, [theme, mounted]);
 
   // Render nothing until mounted to avoid a hydration mismatch on the icon.
