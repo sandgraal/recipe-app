@@ -5,6 +5,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import LangSync from '@/components/LangSync';
 import AdminButton from '@/components/AdminButton';
 import { t, type Locale } from '@/lib/i18n';
+import { SITE_URL, SITE_NAME } from '@/lib/site';
 
 const VALID_LOCALES = ['en', 'es'];
 
@@ -15,11 +16,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   const isEs = lang === 'es';
+  const title = isEs ? 'Recetas · Creaciones Colibrí' : 'Recipes · Creaciones Colibrí';
+  const description = isEs
+    ? 'Una colección de recetas — inspirada en los sabores de Costa Rica y más allá.'
+    : 'A personal recipe collection — inspired by the flavors of Costa Rica and beyond.';
   return {
-    title: isEs ? 'Recetas · Creaciones Colibrí' : 'Recipes · Creaciones Colibrí',
-    description: isEs
-      ? 'Una colección de recetas — inspirada en los sabores de Costa Rica y más allá.'
-      : 'A personal recipe collection — inspired by the flavors of Costa Rica and beyond.',
+    metadataBase: new URL(SITE_URL),
+    title,
+    description,
+    openGraph: { siteName: SITE_NAME, locale: isEs ? 'es_ES' : 'en_US', type: 'website' },
+    twitter: { card: 'summary_large_image' },
   };
 }
 
@@ -57,6 +63,9 @@ export default async function LangLayout({
               <img
                 src="https://sandgraal.github.io/creaciones-colibri/img/branding/creaciones-colibri-logo-small.png"
                 alt=""
+                width={32}
+                height={32}
+                decoding="async"
                 className="w-8 h-8 object-contain"
               />
               <span
@@ -93,6 +102,10 @@ export default async function LangLayout({
               <img
                 src="https://sandgraal.github.io/creaciones-colibri/img/branding/creaciones-colibri-logo-small.png"
                 alt=""
+                width={20}
+                height={20}
+                loading="lazy"
+                decoding="async"
                 className="w-5 h-5 object-contain opacity-60"
               />
               <span
