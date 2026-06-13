@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Sun, Moon, Monitor, type LucideIcon } from 'lucide-react';
 
 type Theme = 'system' | 'light' | 'dark';
 
@@ -12,7 +13,7 @@ function resolve(theme: Theme): 'light' | 'dark' {
 }
 
 const NEXT: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' };
-const ICON: Record<Theme, string> = { system: '🖥️', light: '☀️', dark: '🌙' };
+const ICON: Record<Theme, LucideIcon> = { system: Monitor, light: Sun, dark: Moon };
 const LABEL_ES: Record<Theme, string> = { system: 'sistema', light: 'claro', dark: 'oscuro' };
 
 /** Light / Dark / System theme toggle. Sets data-theme on <html> (matched by the
@@ -57,6 +58,7 @@ export default function ThemeToggle({ lang = 'en' }: { lang?: string }) {
   const label = es
     ? `Tema: ${LABEL_ES[theme]}. Cambiar a ${LABEL_ES[NEXT[theme]]}.`
     : `Theme: ${theme}. Switch to ${NEXT[theme]}.`;
+  const Glyph = ICON[theme];
 
   return (
     <button type="button"
@@ -66,7 +68,7 @@ export default function ThemeToggle({ lang = 'en' }: { lang?: string }) {
       className="flex items-center justify-center w-8 h-8 rounded-full border transition-colors"
       style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--muted)' }}
     >
-      <span aria-hidden="true">{ICON[theme]}</span>
+      <Glyph size={16} aria-hidden="true" />
     </button>
   );
 }

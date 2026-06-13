@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAdmin } from '@/lib/useAdmin';
 import { t, type Locale } from '@/lib/i18n';
+import { Lock, LockOpen } from 'lucide-react';
 
 interface Props {
   lang: string;
@@ -50,7 +51,7 @@ export default function AdminButton({ lang }: Props) {
             style={{ background: 'rgba(31,138,112,0.12)', color: 'var(--secondary)', border: '1px solid rgba(31,138,112,0.25)' }}
             title="Logged in as admin"
           >
-            <span>🔓</span>
+            <LockOpen size={14} aria-hidden="true" />
             <span className="hidden sm:inline">Admin</span>
           </button>
         ) : (
@@ -60,7 +61,7 @@ export default function AdminButton({ lang }: Props) {
             style={{ background: 'var(--bg)', color: 'var(--muted)', border: '1px solid var(--border)' }}
             title="Admin login"
           >
-            <span>🔒</span>
+            <Lock size={14} aria-hidden="true" />
           </button>
         )}
       </div>

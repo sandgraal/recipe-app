@@ -5,6 +5,7 @@ import Link from 'next/link';
 import RecipeCard from '@/components/RecipeCard';
 import { Recipe } from '@/lib/types';
 import { t, getGreeting, localizeCuisine, localizeTag, type Locale } from '@/lib/i18n';
+import { Search, X } from 'lucide-react';
 import { useAdmin } from '@/lib/useAdmin';
 
 function parseMinutes(time: string): number {
@@ -113,7 +114,7 @@ function SearchOverlay({
       <div className="mt-20 mx-auto w-full max-w-2xl px-4">
         <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'var(--card)' }}>
           <div className="flex items-center px-4 py-3 gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-            <span aria-hidden="true" style={{ color: 'var(--muted)' }}>🔍</span>
+            <Search size={18} aria-hidden="true" style={{ color: 'var(--muted)' }} />
             <input
               ref={inputRef}
               type="text"
@@ -132,7 +133,7 @@ function SearchOverlay({
             <button onClick={onClose} aria-label={lang === 'es' ? 'Cerrar' : 'Close'}
               className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
               style={{ background: 'var(--border)', color: 'var(--muted)' }}>
-              <span aria-hidden="true">✕</span>
+              <X size={16} aria-hidden="true" />
             </button>
           </div>
 
@@ -350,7 +351,7 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
             <button onClick={() => setShowSearch(true)} aria-label={t(locale, 'home_search')}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all"
               style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--card)', boxShadow: 'var(--shadow)' }}>
-              <span aria-hidden="true">🔍</span>
+              <Search size={16} aria-hidden="true" />
               <span className="hidden sm:inline">{t(locale, 'home_search')}</span>
               {isFiltering && <span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />}
             </button>

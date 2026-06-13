@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { Recipe } from '@/lib/types';
 import { recipeTitle, recipeTags, formatTime, localizeCuisine, type Locale } from '@/lib/i18n';
+import { Clock, Users, UtensilsCrossed } from 'lucide-react';
 
 const GRADIENTS = [
   'linear-gradient(145deg, #fde8d8 0%, #f7c4a8 100%)',
@@ -46,9 +47,9 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
             priority
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-6xl"
+          <div className="absolute inset-0 flex items-center justify-center"
             style={{ background: gradient }} aria-hidden="true">
-            🍽️
+            <UtensilsCrossed size={56} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} />
           </div>
         )}
         {/* Gradient overlay */}
@@ -69,8 +70,8 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
           </h2>
           <div className="flex items-center gap-3 text-xs" style={{ color: 'rgba(255,255,255,0.75)' }}>
             {recipe.cuisine && <span>{localizeCuisine(recipe.cuisine, locale)}</span>}
-            {recipe.total_time && <><span style={{ opacity: 0.5 }}>·</span><span>⏱ {formatTime(recipe.total_time, locale)}</span></>}
-            {recipe.servings && <><span style={{ opacity: 0.5 }}>·</span><span>👤 {recipe.servings}</span></>}
+            {recipe.total_time && <><span style={{ opacity: 0.5 }}>·</span><span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> {formatTime(recipe.total_time, locale)}</span></>}
+            {recipe.servings && <><span style={{ opacity: 0.5 }}>·</span><span className="inline-flex items-center gap-1"><Users size={12} aria-hidden="true" /> {recipe.servings}</span></>}
           </div>
         </div>
       </article>
@@ -105,7 +106,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-4xl" style={{ background: gradient }} aria-hidden="true">🍴</div>
+            <div className="w-full h-full flex items-center justify-center" style={{ background: gradient }} aria-hidden="true"><UtensilsCrossed size={40} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} /></div>
           )}
         </div>
         <div className="p-4">
@@ -115,8 +116,8 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
           </h3>
           <div className="flex items-center gap-2 text-xs mt-2" style={{ color: 'var(--muted)' }}>
             {recipe.cuisine && <span>{localizeCuisine(recipe.cuisine, locale)}</span>}
-            {recipe.total_time && <><span style={{ opacity: 0.4 }}>·</span><span>⏱ {formatTime(recipe.total_time, locale)}</span></>}
-            {recipe.servings && <><span style={{ opacity: 0.4 }}>·</span><span>👤 {recipe.servings}</span></>}
+            {recipe.total_time && <><span style={{ opacity: 0.4 }}>·</span><span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> {formatTime(recipe.total_time, locale)}</span></>}
+            {recipe.servings && <><span style={{ opacity: 0.4 }}>·</span><span className="inline-flex items-center gap-1"><Users size={12} aria-hidden="true" /> {recipe.servings}</span></>}
           </div>
           {tags.length > 0 && (
             <div className="flex gap-1 mt-3 flex-wrap">
@@ -166,7 +167,7 @@ function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: str
               sizes="192px"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-3xl" style={{ background: gradient }} aria-hidden="true">🍴</div>
+            <div className="w-full h-full flex items-center justify-center" style={{ background: gradient }} aria-hidden="true"><UtensilsCrossed size={32} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} /></div>
           )}
         </div>
         <div className="p-3">

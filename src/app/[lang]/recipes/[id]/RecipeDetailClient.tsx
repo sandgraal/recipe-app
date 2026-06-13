@@ -12,6 +12,7 @@ import {
 } from '@/lib/i18n';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
+import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -84,13 +85,13 @@ function StepTimer({ minutes, lang = 'en' }: { minutes: number; lang?: Locale })
           aria-pressed={running}
           className="px-1.5 py-0.5 rounded text-white text-xs"
           style={{ background: running ? '#f16745' : 'var(--secondary)' }}>
-          <span aria-hidden="true">{running ? '⏸' : '▶'}</span>
+          {running ? <Pause size={12} aria-hidden="true" /> : <Play size={12} aria-hidden="true" />}
         </button>
       )}
       {!running && secs < minutes * 60 && (
         <button onClick={() => { setSecs(minutes * 60); setRunning(false); }}
           aria-label={es ? 'Reiniciar temporizador' : 'Reset timer'}
-          className="opacity-50 hover:opacity-100 text-xs"><span aria-hidden="true">↺</span></button>
+          className="opacity-50 hover:opacity-100 text-xs"><RotateCcw size={12} aria-hidden="true" /></button>
       )}
     </div>
   );
@@ -129,7 +130,7 @@ function RecipeChat({ recipe, lang }: { recipe: Recipe; lang: Locale }) {
   return (
     <div className="mt-8 border" style={{ borderRadius: 'var(--radius-md)', borderColor: 'var(--border)', background: 'var(--card)' }}>
       <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
-        <span style={{ color: 'var(--secondary)', fontSize: '1.1rem' }}>🤖</span>
+        <Sparkles size={18} aria-hidden="true" style={{ color: 'var(--secondary)' }} />
         <span className="text-sm font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
           {t(lang, 'chat_title')}
         </span>
@@ -461,11 +462,11 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
                   <button aria-label={locale === 'es' ? 'Imagen anterior' : 'Previous image'}
                     onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
-                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}><span aria-hidden="true">‹</span></button>
+                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}><ChevronLeft size={20} aria-hidden="true" /></button>
                   <button aria-label={locale === 'es' ? 'Imagen siguiente' : 'Next image'}
                     onClick={() => setActiveImg(i => (i + 1) % allImages.length)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
-                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}><span aria-hidden="true">›</span></button>
+                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}><ChevronRight size={20} aria-hidden="true" /></button>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {allImages.map((_, i) => (
                       <button key={i} onClick={() => setActiveImg(i)}
@@ -508,9 +509,9 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
         </div>
 
         <div className="flex flex-wrap items-center gap-4 mb-3 text-sm" style={{ color: 'var(--muted)' }}>
-          {recipe.cuisine && <span><span aria-hidden="true">🌍</span> {localizeCuisine(recipe.cuisine, locale)}</span>}
-          {recipe.total_time && <span><span aria-hidden="true">⏱</span> {formatTime(recipe.total_time, locale)}</span>}
-          {recipe.servings && <span><span aria-hidden="true">👤</span> {t(locale, 'recipe_servings', { n: recipe.servings })}</span>}
+          {recipe.cuisine && <span className="inline-flex items-center gap-1.5"><Globe size={14} aria-hidden="true" /> {localizeCuisine(recipe.cuisine, locale)}</span>}
+          {recipe.total_time && <span className="inline-flex items-center gap-1.5"><Clock size={14} aria-hidden="true" /> {formatTime(recipe.total_time, locale)}</span>}
+          {recipe.servings && <span className="inline-flex items-center gap-1.5"><Users size={14} aria-hidden="true" /> {t(locale, 'recipe_servings', { n: recipe.servings })}</span>}
         </div>
 
         {displayTags.length > 0 && (
@@ -542,13 +543,13 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
                     style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)' }}>
                     <button onClick={() => setServings(s => Math.max(1, s - 1))} className="w-5 text-center font-bold"
                       aria-label={locale === 'es' ? 'Menos porciones' : 'Fewer servings'}
-                      style={{ color: 'var(--accent)' }}><span aria-hidden="true">−</span></button>
+                      style={{ color: 'var(--accent)' }}><Minus size={14} aria-hidden="true" /></button>
                     <span className="w-14 text-center font-medium" style={{ color: 'var(--text)' }} aria-live="polite">
                       {servings} {t(locale, 'recipe_srv')}
                     </span>
                     <button onClick={() => setServings(s => s + 1)} className="w-5 text-center font-bold"
                       aria-label={locale === 'es' ? 'Más porciones' : 'More servings'}
-                      style={{ color: 'var(--accent)' }}><span aria-hidden="true">+</span></button>
+                      style={{ color: 'var(--accent)' }}><Plus size={14} aria-hidden="true" /></button>
                   </div>
                 )}
               </div>
