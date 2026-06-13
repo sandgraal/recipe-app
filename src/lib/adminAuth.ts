@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createHmac } from 'crypto';
 import { ADMIN_COOKIE, ADMIN_UI_COOKIE } from '@/lib/authConstants';
+import { adminSessionToken } from '@/lib/adminSession';
 
 /**
  * Server-side authorization for admin/write API routes.
@@ -17,16 +17,7 @@ import { ADMIN_COOKIE, ADMIN_UI_COOKIE } from '@/lib/authConstants';
  * XSS). httpOnly means client JS can't read the session value.
  */
 export { ADMIN_COOKIE, ADMIN_UI_COOKIE };
-
-/**
- * Opaque session value derived from the admin password via HMAC. Stored in the
- * cookie instead of the raw password, so the password isn't sent on every
- * request or captured by anything that logs Cookie headers. Possessing the token
- * still grants access (no server-side store), but it doesn't reveal the secret.
- */
-export function adminSessionToken(secret: string): string {
-  return createHmac('sha256', secret).update('colibri-admin-session-v1').digest('hex');
-}
+export { adminSessionToken };
 
 export function writeAllowed(req: NextRequest): boolean {
   const secret = process.env.ADMIN_PASSWORD;

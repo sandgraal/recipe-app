@@ -178,7 +178,7 @@ function SearchOverlay({
                 {resultCount === 1
                   ? t(lang, 'search_found_one', { n: resultCount })
                   : t(lang, 'search_found_many', { n: resultCount })}
-                {search && <> {t(lang, 'search_matching')} <strong style={{ color: 'var(--text)' }}>"{search}"</strong></>}
+                {search && <> {t(lang, 'search_matching')} <strong style={{ color: 'var(--text)' }}>&ldquo;{search}&rdquo;</strong></>}
               </p>
             </div>
           )}
