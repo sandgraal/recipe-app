@@ -111,9 +111,9 @@ function RecipeChat({ recipe, lang }: { recipe: Recipe; lang: Locale }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, recipe, lang }),
       });
-      const { answer } = await res.json();
-      setMsgs(m => [...m, { role: 'ai', text: answer }]);
-    } catch {
+      const data = await res.json();
+      if (!res.ok || !data?.answer) throw new Error();
+      setMsgs(m => [...m, { role: 'ai', text: data.answer }]);
       setMsgs(m => [...m, { role: 'ai', text: t(lang, 'chat_error') }]);
     }
     setLoading(false);
