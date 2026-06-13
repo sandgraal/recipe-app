@@ -47,9 +47,10 @@ export default function AdminButton({ lang }: Props) {
         {isAdmin ? (
           <button
             onClick={logout}
+            aria-label={locale === 'es' ? 'Cerrar sesión de administrador' : 'Log out of admin'}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
             style={{ background: 'rgba(31,138,112,0.12)', color: 'var(--secondary)', border: '1px solid rgba(31,138,112,0.25)' }}
-            title="Logged in as admin"
+            title={locale === 'es' ? 'Sesión de administrador iniciada' : 'Logged in as admin'}
           >
             <LockOpen size={14} aria-hidden="true" />
             <span className="hidden sm:inline">Admin</span>
@@ -57,9 +58,10 @@ export default function AdminButton({ lang }: Props) {
         ) : (
           <button
             onClick={() => setShowModal(true)}
+            aria-label={locale === 'es' ? 'Acceso de administrador' : 'Admin login'}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
             style={{ background: 'var(--bg)', color: 'var(--muted)', border: '1px solid var(--border)' }}
-            title="Admin login"
+            title={locale === 'es' ? 'Acceso de administrador' : 'Admin login'}
           >
             <Lock size={14} aria-hidden="true" />
           </button>
