@@ -21,11 +21,13 @@ export async function GET(req: NextRequest) {
   const cuisine = searchParams.get('cuisine');
   const tag = searchParams.get('tag');
 
-  let query = supabase.from('recipes').select('*').order('created_at', { ascending: false });
+  // When searching, go through the search_recipes() SQL function so the query
+  // also matches ingredient names (in both languages), not just title/cuisine/
+  // description. It returns `setof recipes`, so cuisine/tag still chain on top.
+  let query = q
+    ? supabase.rpc('search_recipes', { q }).order('created_at', { ascending: false })
+    : supabase.from('recipes').select('*').order('created_at', { ascending: false });
 
-  if (q) {
-    query = query.or(`title.ilike.%${q}%,cuisine.ilike.%${q}%,description.ilike.%${q}%`);
-  }
   if (cuisine) {
     query = query.ilike('cuisine', cuisine);
   }
