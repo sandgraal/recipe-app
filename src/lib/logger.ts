@@ -8,7 +8,7 @@ type Level = 'info' | 'warn' | 'error';
 function emit(level: Level, msg: string, ctx?: Record<string, unknown>) {
   let line: string;
   try {
-    line = JSON.stringify({ level, msg, ...ctx });
+    line = JSON.stringify({ ...(ctx ?? {}), level, msg });
   } catch {
     line = JSON.stringify({ level, msg });
   }
