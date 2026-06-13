@@ -11,6 +11,7 @@ import {
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
+import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -192,8 +193,19 @@ function CookMode({ recipe, lang, steps, onClose }: {
   const [idx, setIdx] = useState(0);
   const step = steps[idx];
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === 'ArrowLeft') setIdx(i => Math.max(0, i - 1));
+      else if (e.key === 'ArrowRight') setIdx(i => Math.min(steps.length - 1, i + 1));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, steps.length]);
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#1a1510' }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#1a1510' }}
+      role="dialog" aria-modal="true" aria-label={recipeTitle(recipe, lang)}>
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <span className="text-white/60 text-sm">{recipeTitle(recipe, lang)}</span>
         <button onClick={onClose} className="text-white/60 hover:text-white text-sm px-3 py-1.5 border border-white/20 rounded-full">
@@ -201,7 +213,7 @@ function CookMode({ recipe, lang, steps, onClose }: {
         </button>
       </div>
       <div className="px-6 pt-6 pb-2">
-        <div className="flex gap-1">
+        <div className="flex gap-1" aria-hidden="true">
           {steps.map((_, i) => (
             <div key={i} onClick={() => setIdx(i)} className="flex-1 h-1 rounded-full cursor-pointer transition-all"
               style={{ background: i === idx ? 'var(--accent)' : i < idx ? 'var(--secondary)' : 'rgba(255,255,255,0.15)' }} />
@@ -374,6 +386,18 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
   const displayTags = recipeTags(recipe, locale);
   const needsTranslation = locale === 'es' && !hasSpanishTranslation(recipe);
 
+  // Split any "Photo: …" credit lines out of notes so CC/stock attribution can
+  // render as a visible caption under the image (license compliance) rather than
+  // being buried in the notes prose.
+  const noteLines = (displayNotes || '').split('\n');
+  const photoCredit = noteLines
+    .filter(l => l.trim().toLowerCase().startsWith('photo:'))
+    .join(' ').replace(/^\s*photo:\s*/i, '').trim();
+  const cleanNotes = noteLines
+    .filter(l => !l.trim().toLowerCase().startsWith('photo:'))
+    .join('\n').trim();
+  const showHealthDisclaimer = hasHealthTag(recipe.tags);
+
   return (
     <>
       {cookMode && (
@@ -426,15 +450,20 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(47,43,40,0.6) 0%, transparent 50%)' }} />
               {allImages.length > 1 && (
                 <>
-                  <button onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)}
+                  <button aria-label={locale === 'es' ? 'Imagen anterior' : 'Previous image'}
+                    onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
-                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>‹</button>
-                  <button onClick={() => setActiveImg(i => (i + 1) % allImages.length)}
+                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}><span aria-hidden="true">‹</span></button>
+                  <button aria-label={locale === 'es' ? 'Imagen siguiente' : 'Next image'}
+                    onClick={() => setActiveImg(i => (i + 1) % allImages.length)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
-                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>›</button>
+                    style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}><span aria-hidden="true">›</span></button>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {allImages.map((_, i) => (
-                      <button key={i} onClick={() => setActiveImg(i)} className="w-2 h-2 rounded-full transition-all"
+                      <button key={i} onClick={() => setActiveImg(i)}
+                        aria-label={`${locale === 'es' ? 'Ver imagen' : 'View image'} ${i + 1}`}
+                        aria-current={i === activeImg ? 'true' : undefined}
+                        className="w-2 h-2 rounded-full transition-all"
                         style={{ background: i === activeImg ? 'white' : 'rgba(255,255,255,0.4)' }} />
                     ))}
                   </div>
@@ -445,12 +474,17 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
               <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
                 {allImages.map((img, i) => (
                   <button key={i} onClick={() => setActiveImg(i)}
+                    aria-label={`${locale === 'es' ? 'Ver imagen' : 'View image'} ${i + 1}`}
+                    aria-current={i === activeImg ? 'true' : undefined}
                     className="relative flex-shrink-0 overflow-hidden transition-all"
                     style={{ width: 72, height: 52, borderRadius: 'var(--radius-sm)', border: `2px solid ${i === activeImg ? 'var(--secondary)' : 'transparent'}` }}>
                     <Image src={img} alt="" fill className="object-cover" sizes="72px" />
                   </button>
                 ))}
               </div>
+            )}
+            {photoCredit && (
+              <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>{photoCredit}</p>
             )}
           </div>
         )}
@@ -466,13 +500,13 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
         </div>
 
         <div className="flex flex-wrap items-center gap-4 mb-3 text-sm" style={{ color: 'var(--muted)' }}>
-          {recipe.cuisine && <span>🌍 {localizeCuisine(recipe.cuisine, locale)}</span>}
-          {recipe.total_time && <span>⏱ {formatTime(recipe.total_time, locale)}</span>}
-          {recipe.servings && <span>👤 {t(locale, 'recipe_servings', { n: recipe.servings })}</span>}
+          {recipe.cuisine && <span><span aria-hidden="true">🌍</span> {localizeCuisine(recipe.cuisine, locale)}</span>}
+          {recipe.total_time && <span><span aria-hidden="true">⏱</span> {formatTime(recipe.total_time, locale)}</span>}
+          {recipe.servings && <span><span aria-hidden="true">👤</span> {t(locale, 'recipe_servings', { n: recipe.servings })}</span>}
         </div>
 
         {displayTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-3">
             {displayTags.map(tag => (
               <span key={tag} className="px-3 py-1 text-xs"
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '999px', color: 'var(--muted)' }}>
@@ -481,6 +515,8 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
             ))}
           </div>
         )}
+
+        {showHealthDisclaimer && <HealthDisclaimer lang={locale} className="mb-6 max-w-2xl" />}
 
         {/* Two-column layout */}
         <div className="grid md:grid-cols-5 gap-8">
@@ -569,13 +605,13 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
               <p className="text-sm" style={{ color: 'var(--muted)' }}>{t(locale, 'recipe_no_steps')}</p>
             )}
 
-            {displayNotes && (
+            {cleanNotes && (
               <div className="mt-8 p-4 border-l-4"
                 style={{ background: '#fdf3ec', borderLeftColor: 'var(--accent)', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}>
                 <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
                   {t(locale, 'recipe_notes')}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>{displayNotes}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--text)' }}>{cleanNotes}</p>
               </div>
             )}
 
@@ -586,10 +622,11 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
 
       {/* Delete dialog */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="p-6 max-w-sm w-full"
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) { setShowConfirm(false); setDeleteError(''); } }}>
+          <div className="p-6 max-w-sm w-full" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title"
             style={{ background: 'var(--card)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)' }}>
-            <h3 className="text-xl mb-2" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
+            <h3 id="delete-dialog-title" className="text-xl mb-2" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
               {t(locale, 'recipe_delete_title')}
             </h3>
             <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>

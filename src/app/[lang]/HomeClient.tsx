@@ -52,12 +52,13 @@ function RecipeRow({ title, recipes, viewAllLabel, onViewAll }: {
           {title}
         </h2>
         <div className="flex items-center gap-2">
-          <button onClick={() => scroll('left')}
+          {/* Decorative scroll aids — keyboard users tab through the card links directly. */}
+          <button onClick={() => scroll('left')} aria-hidden="true" tabIndex={-1}
             className="hidden sm:flex w-8 h-8 items-center justify-center rounded-full border transition-opacity"
             style={{ borderColor: 'var(--border)', background: 'var(--card)', opacity: canScrollLeft ? 1 : 0.25, cursor: canScrollLeft ? 'pointer' : 'default' }}>
             ←
           </button>
-          <button onClick={() => scroll('right')}
+          <button onClick={() => scroll('right')} aria-hidden="true" tabIndex={-1}
             className="hidden sm:flex w-8 h-8 items-center justify-center rounded-full border transition-opacity"
             style={{ borderColor: 'var(--border)', background: 'var(--card)', opacity: canScrollRight ? 1 : 0.25, cursor: canScrollRight ? 'pointer' : 'default' }}>
             →
@@ -97,16 +98,22 @@ function SearchOverlay({
   onClose: () => void; resultCount: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col"
+      role="dialog" aria-modal="true" aria-label={t(lang, 'home_search')}
       style={{ background: 'rgba(47,43,40,0.6)', backdropFilter: 'blur(6px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="mt-20 mx-auto w-full max-w-2xl px-4">
         <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'var(--card)' }}>
           <div className="flex items-center px-4 py-3 gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-            <span style={{ color: 'var(--muted)' }}>🔍</span>
+            <span aria-hidden="true" style={{ color: 'var(--muted)' }}>🔍</span>
             <input
               ref={inputRef}
               type="text"
@@ -122,9 +129,10 @@ function SearchOverlay({
                 {t(lang, 'search_clear')}
               </button>
             )}
-            <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
+            <button onClick={onClose} aria-label={lang === 'es' ? 'Cerrar' : 'Close'}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
               style={{ background: 'var(--border)', color: 'var(--muted)' }}>
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
 
@@ -339,10 +347,10 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
                 {t(locale, 'home_back')}
               </button>
             )}
-            <button onClick={() => setShowSearch(true)}
+            <button onClick={() => setShowSearch(true)} aria-label={t(locale, 'home_search')}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all"
               style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--card)', boxShadow: 'var(--shadow)' }}>
-              <span>🔍</span>
+              <span aria-hidden="true">🔍</span>
               <span className="hidden sm:inline">{t(locale, 'home_search')}</span>
               {isFiltering && <span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />}
             </button>
