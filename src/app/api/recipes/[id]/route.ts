@@ -3,6 +3,7 @@ import { getSupabase, getServiceSupabase } from '@/lib/supabase';
 import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 import { readJsonBody } from '@/lib/requestBody';
+import { recipeUpdateSchema } from '@/lib/schemas';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
@@ -24,12 +25,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const parsed = await readJsonBody(req);
   if (!parsed.ok) return json({ error: parsed.error }, { status: parsed.status });
-  const body = parsed.data as Record<string, unknown>;
+  // Validate + strip to known columns (blocks arbitrary-column injection).
+  const valid = recipeUpdateSchema.safeParse(parsed.data);
+  if (!valid.success) return json({ error: 'Invalid recipe', issues: valid.error.issues }, { status: 422 });
   const supabase = getServiceSupabase();
   const { id } = await params;
   const { data, error } = await supabase
     .from('recipes')
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...valid.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();

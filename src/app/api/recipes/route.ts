@@ -4,6 +4,7 @@ import { buildSpanishFields } from '@/lib/translate';
 import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 import { readJsonBody } from '@/lib/requestBody';
+import { recipeCreateSchema } from '@/lib/schemas';
 import { logger } from '@/lib/logger';
 
 function json(data: unknown, init?: ResponseInit) {
@@ -44,8 +45,11 @@ export async function POST(req: NextRequest) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
   const parsed = await readJsonBody(req);
   if (!parsed.ok) return json({ error: parsed.error }, { status: parsed.status });
+  // Validate + strip to known columns (blocks arbitrary-column injection).
+  const valid = recipeCreateSchema.safeParse(parsed.data);
+  if (!valid.success) return json({ error: 'Invalid recipe', issues: valid.error.issues }, { status: 422 });
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase.from('recipes').insert([parsed.data]).select().single();
+  const { data, error } = await supabase.from('recipes').insert([valid.data]).select().single();
   if (error) return json({ error: error.message }, { status: 500 });
 
   // Auto-translate to Spanish on creation so new recipes are bilingual
