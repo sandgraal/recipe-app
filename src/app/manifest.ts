@@ -14,8 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/',
     display: 'standalone',
     background_color: '#fdf8f3',
-    theme_color: '#1f8a70',
-    icons: [
+    theme_color: '#fdf8f3',
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       // Separate maskable icon (wider crop) so Android's circular/squircle mask
