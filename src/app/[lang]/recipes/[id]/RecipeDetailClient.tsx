@@ -114,7 +114,8 @@ function RecipeChat({ recipe, lang }: { recipe: Recipe; lang: Locale }) {
       });
       const { answer } = await res.json();
       setMsgs(m => [...m, { role: 'ai', text: answer }]);
-    } catch {
+    } catch (e) {
+      console.error('recipe-chat request failed', e);
       setMsgs(m => [...m, { role: 'ai', text: t(lang, 'chat_error') }]);
     }
     setLoading(false);
@@ -282,7 +283,8 @@ function TranslateBanner({ recipeId, lang, onTranslated }: {
       if (!res.ok) throw new Error();
       setStatus('done');
       setTimeout(onTranslated, 800);
-    } catch {
+    } catch (e) {
+      console.error('translate request failed', e);
       setStatus('error');
     }
   }
@@ -366,7 +368,8 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
       // doesn't linger in the (cached) list — the classic post-mutation refresh.
       router.push(`/${lang}`);
       router.refresh();
-    } catch {
+    } catch (e) {
+      console.error('delete request failed', e);
       setDeleting(false);
       setDeleteError(t(locale, 'recipe_delete_failed_conn'));
     }
