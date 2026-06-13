@@ -122,7 +122,7 @@ function SearchOverlay({
                 {t(lang, 'search_clear')}
               </button>
             )}
-            <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
+            <button aria-label={lang === 'es' ? 'Cerrar búsqueda' : 'Close search'} onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
               style={{ background: 'var(--border)', color: 'var(--muted)' }}>
               ✕
             </button>
