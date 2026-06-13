@@ -434,7 +434,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
                     style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>›</button>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {allImages.map((_, i) => (
-                      <button key={i} onClick={() => setActiveImg(i)} className="w-2 h-2 rounded-full transition-all"
+                      <button key={i} aria-label={locale === 'es' ? `Ir a imagen ${i + 1}` : `Go to image ${i + 1}`} onClick={() => setActiveImg(i)} className="w-2 h-2 rounded-full transition-all"
                         style={{ background: i === activeImg ? 'white' : 'rgba(255,255,255,0.4)' }} />
                     ))}
                   </div>
