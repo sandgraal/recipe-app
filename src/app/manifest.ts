@@ -6,7 +6,7 @@ import { SITE_NAME } from '@/lib/site';
 // /manifest.webmanifest and injects <link rel="manifest"> automatically.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: SITE_NAME,
+    name: 'Colibrí',
     short_name: 'Colibrí',
     description:
       'Costa Rican home cooking — a bilingual recipe collection with step timers, cook mode, and a kitchen-friendly print view.',
