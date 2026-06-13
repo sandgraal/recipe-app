@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import AdminButton from '@/components/AdminButton';
+import ThemeToggle from '@/components/ThemeToggle';
 import { t, type Locale } from '@/lib/i18n';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 
@@ -93,7 +94,8 @@ export default async function LangLayout({
                 {t(locale, 'nav_pantry')}
               </Link>
               <AdminButton lang={lang} />
-              <div className="ml-2">
+              <div className="ml-2 flex items-center gap-2">
+                <ThemeToggle lang={lang} />
                 <LanguageSwitcher />
               </div>
             </div>
