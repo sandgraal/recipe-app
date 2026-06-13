@@ -112,9 +112,9 @@ function RecipeChat({ recipe, lang }: { recipe: Recipe; lang: Locale }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, recipe, lang }),
       });
-      const { answer } = await res.json();
-      setMsgs(m => [...m, { role: 'ai', text: answer }]);
-    } catch {
+      const data = await res.json();
+      if (!res.ok || !data?.answer) throw new Error();
+      setMsgs(m => [...m, { role: 'ai', text: data.answer }]);
       setMsgs(m => [...m, { role: 'ai', text: t(lang, 'chat_error') }]);
     }
     setLoading(false);
@@ -461,7 +461,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {allImages.map((_, i) => (
                       <button key={i} onClick={() => setActiveImg(i)}
-                        aria-label={`${locale === 'es' ? 'Ver imagen' : 'View image'} ${i + 1}`}
+                        aria-label={locale === 'es' ? `Ir a imagen ${i + 1}` : `Go to image ${i + 1}`}
                         aria-current={i === activeImg ? 'true' : undefined}
                         className="w-2 h-2 rounded-full transition-all"
                         style={{ background: i === activeImg ? 'white' : 'rgba(255,255,255,0.4)' }} />
@@ -474,7 +474,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
               <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
                 {allImages.map((img, i) => (
                   <button key={i} onClick={() => setActiveImg(i)}
-                    aria-label={`${locale === 'es' ? 'Ver imagen' : 'View image'} ${i + 1}`}
+                    aria-label={locale === 'es' ? `Ver imagen ${i + 1}` : `View image ${i + 1}`}
                     aria-current={i === activeImg ? 'true' : undefined}
                     className="relative flex-shrink-0 overflow-hidden transition-all"
                     style={{ width: 72, height: 52, borderRadius: 'var(--radius-sm)', border: `2px solid ${i === activeImg ? 'var(--secondary)' : 'transparent'}` }}>

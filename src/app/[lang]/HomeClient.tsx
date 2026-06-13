@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import RecipeCard from '@/components/RecipeCard';
-import { Recipe } from '@/lib/types';
+import { RecipeCardData } from '@/lib/types';
 import { t, getGreeting, localizeCuisine, localizeTag, type Locale } from '@/lib/i18n';
 import { useAdmin } from '@/lib/useAdmin';
 
@@ -17,7 +17,7 @@ function parseMinutes(time: string): number {
 
 function RecipeRow({ title, recipes, viewAllLabel, onViewAll }: {
   title: string;
-  recipes: Recipe[];
+  recipes: RecipeCardData[];
   viewAllLabel?: string;
   onViewAll?: () => void;
 }) {
@@ -129,7 +129,7 @@ function SearchOverlay({
                 {t(lang, 'search_clear')}
               </button>
             )}
-            <button onClick={onClose} aria-label={lang === 'es' ? 'Cerrar' : 'Close'}
+            <button aria-label={lang === 'es' ? 'Cerrar búsqueda' : 'Close search'} onClick={onClose}
               className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
               style={{ background: 'var(--border)', color: 'var(--muted)' }}>
               <span aria-hidden="true">✕</span>
@@ -190,13 +190,13 @@ function SearchOverlay({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function HomeClient({ recipes: initialRecipes, lang }: { recipes: Recipe[]; lang: string }) {
+export default function HomeClient({ recipes: initialRecipes, lang }: { recipes: RecipeCardData[]; lang: string }) {
   const locale = lang as Locale;
 
   // Server-fetched catalog (props) — rendered into the initial HTML, no client
   // fetch on load. `recipes` holds the (optionally filtered) view.
   const allRecipes = initialRecipes;
-  const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
+  const [recipes, setRecipes] = useState<RecipeCardData[]>(initialRecipes);
   const [search, setSearch] = useState('');
   const [cuisine, setCuisine] = useState('');
   const [activeTag, setActiveTag] = useState('');

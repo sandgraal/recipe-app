@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
-import { Recipe } from '@/lib/types';
+import { Recipe, RecipeCardData } from '@/lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Fail soft if Supabase env isn't available (e.g. a build without DB access):
@@ -30,8 +30,8 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
   return (data as Recipe) ?? null;
 }
 
-/** Trimmed card rows for listings (cast to Recipe — only card fields are read). */
-export async function getRecipeCards(): Promise<Recipe[]> {
+/** Trimmed card rows for listings. */
+export async function getRecipeCards(): Promise<RecipeCardData[]> {
   const c = client();
   if (!c) return [];
   const { data, error } = await c
@@ -39,7 +39,7 @@ export async function getRecipeCards(): Promise<Recipe[]> {
     .select(CARD_FIELDS)
     .order('created_at', { ascending: false });
   if (error || !data) return [];
-  return data as unknown as Recipe[];
+  return data as RecipeCardData[];
 }
 
 export async function getAllRecipeIds(): Promise<string[]> {
