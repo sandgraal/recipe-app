@@ -2,7 +2,9 @@
 @import "tailwindcss";
 
 :root {
-  /* Creaciones Colibrí palette */
+  color-scheme: light dark;
+
+  /* Creaciones Colibrí palette (light) */
   --bg: #fdf8f3;
   --card: #ffffff;
   --border: #e8ddd5;
@@ -13,10 +15,18 @@
   --secondary: #1f8a70;
   --secondary-hover: #186b57;
   --gold: #f7ba2a;
+  --note-bg: #fdf3ec; /* warm callout for the recipe-notes box */
 
   /* Typography */
   --font-display: 'Fraunces', 'Georgia', serif;
   --font-body: 'Work Sans', 'Helvetica Neue', sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.25rem;
 
   /* Shape */
   --radius-lg: 28px;
@@ -24,6 +34,30 @@
   --radius-sm: 10px;
   --shadow: 0 8px 20px rgba(47,43,40,0.06);
   --shadow-md: 0 12px 32px rgba(47,43,40,0.10);
+
+  /* Motion */
+  --motion-fast: 150ms;
+  --motion-normal: 300ms;
+  --motion-slow: 600ms;
+}
+
+/* Dark mode — warm, brand-matched (not cold gray). The app uses var(--*) tokens
+   throughout, so flipping these cascades across the UI. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17120f;
+    --card: #221b17;
+    --border: #3a322c;
+    --text: #f3ece4;
+    --muted: #b8a99f;
+    --accent: #f4794f;
+    --accent-hover: #ff8e68;
+    --secondary: #34a98c;
+    --secondary-hover: #46bb9d;
+    --note-bg: #2a211b;
+    --shadow: 0 8px 20px rgba(0,0,0,0.40);
+    --shadow-md: 0 12px 32px rgba(0,0,0,0.55);
+  }
 }
 
 body {
@@ -80,4 +114,47 @@ h1, h2, h3, h4, h5, h6 {
 }
 .nav-cta:hover {
   background: var(--secondary-hover);
+}
+
+/* Reusable component primitives (token-driven, dark-mode aware). Available for
+   migrating the pervasive inline styles incrementally. */
+@layer components {
+  .btn-primary {
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: #fff;
+    background: var(--accent);
+    transition: background var(--motion-fast), transform var(--motion-fast);
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    transition: background var(--motion-fast);
+  }
+  .btn-secondary:hover { background: var(--bg); }
+
+  .tag {
+    padding: 0.125rem 0.625rem;
+    border-radius: 999px;
+    font-size: var(--text-xs);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--bg);
+  }
+
+  .card-surface {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+  }
 }

@@ -622,7 +622,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
 
             {cleanNotes && (
               <div className="mt-8 p-4 border-l-4"
-                style={{ background: '#fdf3ec', borderLeftColor: 'var(--accent)', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}>
+                style={{ background: 'var(--note-bg)', borderLeftColor: 'var(--accent)', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}>
                 <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
                   {t(locale, 'recipe_notes')}
                 </h3>

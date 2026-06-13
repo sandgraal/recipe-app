@@ -34,7 +34,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
   const tags = recipeTags(recipe, locale);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group h-full">
-      <div className="relative h-full overflow-hidden"
+      <article className="relative h-full overflow-hidden"
         style={{ borderRadius: 'var(--radius-lg)' }}>
         {recipe.image_url ? (
           <Image
@@ -47,7 +47,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-6xl"
-            style={{ background: gradient }}>
+            style={{ background: gradient }} aria-hidden="true">
             🍽️
           </div>
         )}
@@ -73,7 +73,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
             {recipe.servings && <><span style={{ opacity: 0.5 }}>·</span><span>👤 {recipe.servings}</span></>}
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
@@ -86,7 +86,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
   const tags = recipeTags(recipe, locale);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group">
-      <div className="overflow-hidden transition-all duration-200 border hover:-translate-y-0.5"
+      <article className="overflow-hidden transition-all duration-200 border hover:-translate-y-0.5"
         style={{
           background: 'var(--card)',
           borderColor: 'var(--border)',
@@ -105,7 +105,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-4xl" style={{ background: gradient }}>🍴</div>
+            <div className="w-full h-full flex items-center justify-center text-4xl" style={{ background: gradient }} aria-hidden="true">🍴</div>
           )}
         </div>
         <div className="p-4">
@@ -135,7 +135,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
             </div>
           )}
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
@@ -147,7 +147,7 @@ function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: str
   const title = recipeTitle(recipe, locale);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group flex-shrink-0 w-48">
-      <div className="overflow-hidden border transition-all duration-200 hover:-translate-y-0.5"
+      <article className="overflow-hidden border transition-all duration-200 hover:-translate-y-0.5"
         style={{
           background: 'var(--card)',
           borderColor: 'var(--border)',
@@ -166,7 +166,7 @@ function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: str
               sizes="192px"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-3xl" style={{ background: gradient }}>🍴</div>
+            <div className="w-full h-full flex items-center justify-center text-3xl" style={{ background: gradient }} aria-hidden="true">🍴</div>
           )}
         </div>
         <div className="p-3">
@@ -178,7 +178,7 @@ function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: str
             {[localizeCuisine(recipe.cuisine, locale), recipe.total_time ? formatTime(recipe.total_time, locale) : null].filter(Boolean).join(' · ') || ' '}
           </p>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
