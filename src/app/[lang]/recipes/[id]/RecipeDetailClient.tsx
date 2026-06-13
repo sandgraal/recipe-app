@@ -426,7 +426,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(47,43,40,0.6) 0%, transparent 50%)' }} />
               {allImages.length > 1 && (
                 <>
-                  <button onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)}
+                  <button aria-label={locale === 'es' ? 'Imagen anterior' : 'Previous image'} onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
                     style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>‹</button>
                   <button onClick={() => setActiveImg(i => (i + 1) % allImages.length)}
