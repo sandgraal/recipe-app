@@ -35,8 +35,9 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.wordpress.com' },
       { protocol: 'https', hostname: '**.cloudinary.com' },
       { protocol: 'https', hostname: '**.imgix.net' },
-      // Catch-all for any other https image source
-      { protocol: 'https', hostname: '**' },
+      // NOTE: no catch-all. All current recipe images are Supabase-hosted; the
+      // explicit hosts above cover legacy og:image imports. Add a specific host
+      // here if a new trusted source is needed rather than re-opening to '**'.
     ],
   },
 };

@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getServiceSupabase } from '@/lib/supabase';
 import { buildSpanishFields } from '@/lib/translate';
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+import { CORS_HEADERS } from '@/lib/cors';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
@@ -17,11 +13,13 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = checkRateLimit(req, 'translate', { limit: 20, windowMs: 60_000 });
+  if (limited) return json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
   try {
     const { recipeId } = await req.json();
     if (!recipeId) return json({ error: 'recipeId required' }, { status: 400 });
 
-    const supabase = getSupabase();
+    const supabase = getServiceSupabase();
 
     // Fetch the recipe
     const { data: recipeRow, error: fetchError } = await supabase

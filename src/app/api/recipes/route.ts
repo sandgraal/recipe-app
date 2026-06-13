@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabase, getServiceSupabase } from '@/lib/supabase';
 import { buildSpanishFields } from '@/lib/translate';
 import { writeAllowed } from '@/lib/adminAuth';
+import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-// Always serve fresh data so mutations (create/delete) reflect immediately.
-const NO_STORE = { 'Cache-Control': 'no-store, must-revalidate' };
+const MAX_BODY_BYTES = 1_000_000; // 1 MB is ample for a recipe payload
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
@@ -46,8 +40,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
-  const supabase = getSupabase();
-  const body = await req.json();
+  if (Number(req.headers.get('content-length')) > MAX_BODY_BYTES) {
+    return json({ error: 'Payload too large' }, { status: 413 });
+  }
+  const supabase = getServiceSupabase();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: 'Invalid JSON' }, { status: 400 });
+  }
   const { data, error } = await supabase.from('recipes').insert([body]).select().single();
   if (error) return json({ error: error.message }, { status: 500 });
 

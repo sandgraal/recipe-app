@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { CORS_HEADERS } from '@/lib/cors';
+import { checkRateLimit } from '@/lib/rateLimit';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+type ChatRecipe = {
+  title?: string; cuisine?: string; servings?: number; total_time?: string;
+  ingredients?: { amount: string; unit: string; item: string }[];
+  steps?: { order: number; text: string }[];
+  notes?: string;
 };
 
 export async function OPTIONS() {
@@ -12,9 +15,24 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
-  const { question, recipe } = await req.json();
-  if (!question || !recipe) {
+  const limited = checkRateLimit(req, 'recipe-chat', { limit: 30, windowMs: 60_000 });
+  if (limited) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { ...CORS_HEADERS, 'Retry-After': String(limited.retryAfter) } });
+  }
+
+  let body: { question?: unknown; recipe?: ChatRecipe };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400, headers: CORS_HEADERS });
+  }
+  const question = body.question;
+  const recipe = body.recipe;
+  if (!question || typeof question !== 'string' || !recipe) {
     return NextResponse.json({ error: 'Missing question or recipe' }, { status: 400, headers: CORS_HEADERS });
+  }
+  if (question.length > 500) {
+    return NextResponse.json({ error: 'Question too long' }, { status: 400, headers: CORS_HEADERS });
   }
 
   const client = new Anthropic();
