@@ -53,7 +53,7 @@ export default function ThemeToggle({ lang = 'en' }: { lang?: string }) {
     : `Theme: ${theme}. Switch to ${NEXT[theme]}.`;
 
   return (
-    <button
+    <button type="button"
       onClick={() => setTheme(NEXT[theme])}
       aria-label={label}
       title={label}
