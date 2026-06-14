@@ -21,7 +21,14 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string>(initialData?.image_url || '');
+  // All photos as one ordered list (the first is the cover). Built from the
+  // cover + the gallery so the admin can delete or reorder any photo, not just
+  // the cover. Mirrors the detail page's allImages (cover first, gallery deduped).
+  const [images, setImages] = useState<string[]>(() => {
+    const cover = initialData?.image_url ? [initialData.image_url] : [];
+    const rest = (initialData?.gallery_images || []).filter(u => u && u !== initialData?.image_url);
+    return [...cover, ...rest];
+  });
 
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
@@ -30,7 +37,6 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
   const [servings, setServings] = useState<number | ''>(initialData?.servings || '');
   const [tagsInput, setTagsInput] = useState((initialData?.tags || []).join(', '));
   const [notes, setNotes] = useState(initialData?.notes || '');
-  const [imageUrl, setImageUrl] = useState(initialData?.image_url || '');
   const [ingredients, setIngredients] = useState<Ingredient[]>(
     initialData?.ingredients?.length ? initialData.ingredients : [emptyIngredient()]
   );
@@ -58,6 +64,20 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
     setSteps(prev => [...prev, emptyStep(prev.length + 1)]);
   }
 
+  // Remove any photo (cover or gallery) — just drops it from this recipe's list;
+  // the storage object is left in place (the public bucket disallows anon DELETE).
+  function removeImage(i: number) {
+    setImages(prev => prev.filter((_, idx) => idx !== i));
+  }
+  // Promote a gallery photo to the cover by moving it to the front.
+  function setCover(i: number) {
+    setImages(prev => {
+      const next = [...prev];
+      const [picked] = next.splice(i, 1);
+      return [picked, ...next];
+    });
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -67,10 +87,10 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
     const { error } = await supabase.storage.from('recipe-images').upload(path, file, { upsert: true });
     if (!error) {
       const { data } = supabase.storage.from('recipe-images').getPublicUrl(path);
-      setImageUrl(data.publicUrl);
-      setImagePreview(data.publicUrl);
+      setImages(prev => [...prev, data.publicUrl]);
     }
     setImageUploading(false);
+    if (fileRef.current) fileRef.current.value = '';
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -89,7 +109,11 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
       ingredients: ingredients.filter(i => i.item.trim()),
       steps: steps.filter(s => s.text.trim()).map((s, idx) => ({ ...s, order: idx + 1 })),
       notes: notes.trim() || undefined,
-      image_url: imageUrl || undefined,
+      // First photo is the cover; send the whole list as the gallery. Sending
+      // explicit null/[] (not undefined) so removing a photo actually clears it
+      // server-side instead of leaving the old value untouched.
+      image_url: images[0] ?? null,
+      gallery_images: images,
       source_type: initialData?.source_type || 'manual',
       source_url: initialData?.source_url,
     };
@@ -299,20 +323,49 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
         />
       </div>
 
-      {/* Image */}
+      {/* Photos */}
       <div>
-        <label className={labelClass} style={labelStyle}>Image</label>
-        {imagePreview && (
-          <div className="mb-3 relative h-40 w-full rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="Recipe" className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={() => { setImagePreview(''); setImageUrl(''); }}
-              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center text-sm"
-            >
-              ×
-            </button>
+        <label className={labelClass} style={labelStyle}>
+          Photos{' '}
+          <span className="text-xs font-normal" style={{ color: 'var(--muted)' }}>(the first photo is the cover)</span>
+        </label>
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-3 mb-3">
+            {images.map((img, i) => (
+              <div
+                key={`${img}-${i}`}
+                className="relative h-28 w-36 rounded-lg overflow-hidden border"
+                style={{ borderColor: i === 0 ? 'var(--secondary)' : 'var(--border)' }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                {i === 0 ? (
+                  <span
+                    className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-white"
+                    style={{ background: 'var(--secondary)', fontSize: 11 }}
+                  >
+                    Cover
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setCover(i)}
+                    className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/55 text-white hover:bg-black/75"
+                    style={{ fontSize: 11 }}
+                  >
+                    Set cover
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeImage(i)}
+                  aria-label={`Remove photo ${i + 1}`}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/55 text-white flex items-center justify-center text-sm hover:bg-black/75"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
         )}
         <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -320,10 +373,10 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={imageUploading}
-          className="px-4 py-2 rounded-lg border text-sm font-medium transition-colors"
+          className="px-4 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-60"
           style={{ borderColor: 'var(--border)', color: 'var(--text)', background: 'var(--card)' }}
         >
-          {imageUploading ? 'Uploading...' : imagePreview ? 'Change Image' : 'Upload Image'}
+          {imageUploading ? 'Uploading...' : images.length ? 'Add Photo' : 'Upload Image'}
         </button>
       </div>
 
