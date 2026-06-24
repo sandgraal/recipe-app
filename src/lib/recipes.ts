@@ -50,35 +50,40 @@ export async function getAllRecipeIds(): Promise<string[]> {
   return (data as { id: string }[]).map(r => r.id);
 }
 
-/** The meal group this recipe belongs to (if any), with the OTHER members
- *  resolved to card summaries for linking. Returns null if it's not in a group. */
-export async function getMealGroupForRecipe(recipeId: string): Promise<MealGroup | null> {
+/** All meal groups this recipe belongs to (a recipe can be in several), each
+ *  with the OTHER members resolved to card summaries for linking. */
+export async function getMealGroupsForRecipe(recipeId: string): Promise<MealGroup[]> {
   const c = client();
-  if (!c) return null;
+  if (!c) return [];
   // meal_groups is a small curated table — fetch all and match in JS. (A
   // PostgREST jsonb `cs` filter works, but supabase-js's .contains() serializes
   // a JS array as a Postgres array literal `{…}`, which never matches jsonb.)
   const { data, error } = await c
     .from('meal_groups')
-    .select('id,title,title_es,note,note_es,recipe_ids');
-  if (error || !data?.length) return null;
+    .select('id,title,title_es,note,note_es,recipe_ids,created_at')
+    .order('created_at', { ascending: true });
+  if (error || !data?.length) return [];
   const groups = data as Array<{
     id: string; title: string; title_es: string | null;
     note: string | null; note_es: string | null; recipe_ids: string[];
   }>;
-  const g = groups.find(grp => Array.isArray(grp.recipe_ids) && grp.recipe_ids.includes(recipeId));
-  if (!g) return null;
-  const others = g.recipe_ids.filter(x => x !== recipeId);
-  if (!others.length) return null;
+  const mine = groups.filter(g => Array.isArray(g.recipe_ids) && g.recipe_ids.includes(recipeId));
+  if (!mine.length) return [];
+  // Resolve every sibling across all matched groups in one query.
+  const otherIds = [...new Set(mine.flatMap(g => g.recipe_ids.filter(x => x !== recipeId)))];
   const { data: sibs } = await c
     .from('recipes')
     .select('id,title,title_es,image_url')
-    .in('id', others);
+    .in('id', otherIds);
   const byId = new Map((sibs as MealGroupSibling[] | null ?? []).map(s => [s.id, s]));
-  // Preserve the curated order from recipe_ids.
-  const siblings = others
-    .map(id => byId.get(id))
-    .filter((s): s is MealGroupSibling => !!s);
-  if (!siblings.length) return null;
-  return { id: g.id, title: g.title, title_es: g.title_es, note: g.note, note_es: g.note_es, siblings };
+  return mine
+    .map(g => ({
+      id: g.id, title: g.title, title_es: g.title_es, note: g.note, note_es: g.note_es,
+      // Preserve the curated order from recipe_ids.
+      siblings: g.recipe_ids
+        .filter(x => x !== recipeId)
+        .map(id => byId.get(id))
+        .filter((s): s is MealGroupSibling => !!s),
+    }))
+    .filter(g => g.siblings.length > 0);
 }
