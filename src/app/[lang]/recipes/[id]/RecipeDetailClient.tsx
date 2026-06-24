@@ -682,6 +682,13 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                         </Link>
                       ))}
                     </div>
+                    {group.slug && (
+                      <Link href={`/${lang}/meals/${group.slug}`}
+                        className="inline-flex items-center gap-1 mt-4 text-sm font-medium hover:opacity-70"
+                        style={{ color: 'var(--secondary)' }}>
+                        {t(locale, 'meal_see_full')} →
+                      </Link>
+                    )}
                   </div>
                 );
               })}

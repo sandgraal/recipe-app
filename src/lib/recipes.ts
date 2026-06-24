@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
-import { Recipe, MealGroup, MealGroupSibling } from '@/lib/types';
+import { Recipe, MealGroup, MealGroupSibling, Meal, ShoppingAisle } from '@/lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Fail soft if Supabase env isn't available (e.g. a build without DB access):
@@ -60,11 +60,11 @@ export async function getMealGroupsForRecipe(recipeId: string): Promise<MealGrou
   // a JS array as a Postgres array literal `{…}`, which never matches jsonb.)
   const { data, error } = await c
     .from('meal_groups')
-    .select('id,title,title_es,note,note_es,recipe_ids,created_at')
+    .select('id,slug,title,title_es,note,note_es,recipe_ids,created_at')
     .order('created_at', { ascending: true });
   if (error || !data?.length) return [];
   const groups = data as Array<{
-    id: string; title: string; title_es: string | null;
+    id: string; slug: string | null; title: string; title_es: string | null;
     note: string | null; note_es: string | null; recipe_ids: string[];
   }>;
   const mine = groups.filter(g => Array.isArray(g.recipe_ids) && g.recipe_ids.includes(recipeId));
@@ -78,7 +78,7 @@ export async function getMealGroupsForRecipe(recipeId: string): Promise<MealGrou
   const byId = new Map((sibs as MealGroupSibling[] | null ?? []).map(s => [s.id, s]));
   return mine
     .map(g => ({
-      id: g.id, title: g.title, title_es: g.title_es, note: g.note, note_es: g.note_es,
+      id: g.id, slug: g.slug, title: g.title, title_es: g.title_es, note: g.note, note_es: g.note_es,
       // Preserve the curated order from recipe_ids.
       siblings: g.recipe_ids
         .filter(x => x !== recipeId)
@@ -86,4 +86,43 @@ export async function getMealGroupsForRecipe(recipeId: string): Promise<MealGrou
         .filter((s): s is MealGroupSibling => !!s),
     }))
     .filter(g => g.siblings.length > 0);
+}
+
+/** All meal slugs (for generateStaticParams on the meal pages). */
+export async function getAllMealSlugs(): Promise<string[]> {
+  const c = client();
+  if (!c) return [];
+  const { data, error } = await c.from('meal_groups').select('slug').not('slug', 'is', null);
+  if (error || !data) return [];
+  return (data as { slug: string | null }[]).map(r => r.slug).filter((s): s is string => !!s);
+}
+
+/** A full meal by slug: the group, its member recipes (in curated order), and
+ *  the stored consolidated shopping list. */
+export async function getMealBySlug(slug: string): Promise<Meal | null> {
+  const c = client();
+  if (!c) return null;
+  const { data, error } = await c
+    .from('meal_groups')
+    .select('id,slug,title,title_es,note,note_es,recipe_ids,shopping_list')
+    .eq('slug', slug)
+    .limit(1);
+  if (error || !data?.length) return null;
+  const g = data[0] as {
+    id: string; slug: string; title: string; title_es: string | null;
+    note: string | null; note_es: string | null; recipe_ids: string[];
+    shopping_list: ShoppingAisle[] | null;
+  };
+  const ids = Array.isArray(g.recipe_ids) ? g.recipe_ids : [];
+  const { data: recs } = await c
+    .from('recipes')
+    .select('id,title,title_es,image_url')
+    .in('id', ids);
+  const byId = new Map((recs as MealGroupSibling[] | null ?? []).map(r => [r.id, r]));
+  const recipes = ids.map(id => byId.get(id)).filter((r): r is MealGroupSibling => !!r);
+  return {
+    id: g.id, slug: g.slug, title: g.title, title_es: g.title_es, note: g.note, note_es: g.note_es,
+    recipes,
+    shoppingList: Array.isArray(g.shopping_list) ? g.shopping_list : [],
+  };
 }
