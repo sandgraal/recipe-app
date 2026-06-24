@@ -26,7 +26,9 @@ export async function generateMetadata(
   const description = recipeDescription(recipe, locale)
     || (recipe.cuisine ? `${localizeCuisine(recipe.cuisine, locale)} recipe — ${title}` : title);
   const path = `/recipes/${id}`;
-  const images = recipe.image_url ? [recipe.image_url] : [];
+  // og:image / twitter:image (with correct dimensions) come from the
+  // opengraph-image.tsx card in this folder — don't also set images here or two
+  // competing og:image tags get emitted.
   return {
     title: `${title} · ${SITE_NAME}`,
     description,
@@ -38,8 +40,8 @@ export async function generateMetadata(
         'x-default': `${SITE_URL}/en${path}`,
       },
     },
-    openGraph: { title, description, url: `${SITE_URL}/${lang}${path}`, type: 'article', images },
-    twitter: { card: 'summary_large_image', title, description, images },
+    openGraph: { title, description, url: `${SITE_URL}/${lang}${path}`, type: 'article' },
+    twitter: { card: 'summary_large_image', title, description },
   };
 }
 
