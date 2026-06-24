@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
-import { Recipe, MealGroup, MealGroupSibling, Meal, ShoppingAisle } from '@/lib/types';
+import { Recipe, MealGroup, MealGroupSibling, Meal, MealSummary, ShoppingAisle } from '@/lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Fail soft if Supabase env isn't available (e.g. a build without DB access):
@@ -86,6 +86,29 @@ export async function getMealGroupsForRecipe(recipeId: string): Promise<MealGrou
         .filter((s): s is MealGroupSibling => !!s),
     }))
     .filter(g => g.siblings.length > 0);
+}
+
+/** All meals as lightweight summaries (for the home showcase + /meals index),
+ *  each with its member recipes resolved for the collage thumbnail. */
+export async function getAllMeals(): Promise<MealSummary[]> {
+  const c = client();
+  if (!c) return [];
+  const { data, error } = await c
+    .from('meal_groups')
+    .select('slug,title,title_es,recipe_ids,created_at')
+    .not('slug', 'is', null)
+    .order('created_at', { ascending: true });
+  if (error || !data?.length) return [];
+  const groups = data as Array<{ slug: string; title: string; title_es: string | null; recipe_ids: string[] }>;
+  const allIds = [...new Set(groups.flatMap(g => (Array.isArray(g.recipe_ids) ? g.recipe_ids : [])))];
+  const { data: recs } = await c.from('recipes').select('id,title,title_es,image_url').in('id', allIds);
+  const byId = new Map((recs as MealGroupSibling[] | null ?? []).map(r => [r.id, r]));
+  return groups
+    .map(g => ({
+      slug: g.slug, title: g.title, title_es: g.title_es,
+      recipes: (g.recipe_ids || []).map(id => byId.get(id)).filter((r): r is MealGroupSibling => !!r),
+    }))
+    .filter(m => m.recipes.length > 0);
 }
 
 /** All meal slugs (for generateStaticParams on the meal pages). */

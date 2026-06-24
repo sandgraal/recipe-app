@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getRecipeCards } from '@/lib/recipes';
+import { getRecipeCards, getAllMeals } from '@/lib/recipes';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 import HomeClient from './HomeClient';
 
@@ -33,6 +33,6 @@ export default async function HomePage(
   { params }: { params: Promise<{ lang: string }> },
 ) {
   const { lang } = await params;
-  const recipes = await getRecipeCards();
-  return <HomeClient recipes={recipes} lang={lang} />;
+  const [recipes, meals] = await Promise.all([getRecipeCards(), getAllMeals()]);
+  return <HomeClient recipes={recipes} meals={meals} lang={lang} />;
 }
