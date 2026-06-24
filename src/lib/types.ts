@@ -55,11 +55,39 @@ export interface MealGroupSibling {
  *  timing/coordination note. `siblings` are the OTHER recipes in the group. */
 export interface MealGroup {
   id: string;
+  slug?: string | null;
   title: string;
   title_es?: string | null;
   note?: string | null;
   note_es?: string | null;
   siblings: MealGroupSibling[];
+}
+
+/** One line of a consolidated meal shopping list. Bilingual; qty is free text. */
+export interface ShoppingItem {
+  name: string;
+  name_es?: string | null;
+  qty?: string | null;
+  qty_es?: string | null;
+}
+
+/** A store-aisle group within a meal's consolidated shopping list. */
+export interface ShoppingAisle {
+  aisle: string;
+  aisle_es?: string | null;
+  items: ShoppingItem[];
+}
+
+/** A full meal: the group + its member recipes + the consolidated shopping list. */
+export interface Meal {
+  id: string;
+  slug: string;
+  title: string;
+  title_es?: string | null;
+  note?: string | null;
+  note_es?: string | null;
+  recipes: MealGroupSibling[];
+  shoppingList: ShoppingAisle[];
 }
 
 export type Locale = 'en' | 'es';
