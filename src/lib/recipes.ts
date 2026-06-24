@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
-import { Recipe } from '@/lib/types';
+import { Recipe, MealGroup, MealGroupSibling } from '@/lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Fail soft if Supabase env isn't available (e.g. a build without DB access):
@@ -48,4 +48,37 @@ export async function getAllRecipeIds(): Promise<string[]> {
   const { data, error } = await c.from('recipes').select('id');
   if (error || !data) return [];
   return (data as { id: string }[]).map(r => r.id);
+}
+
+/** The meal group this recipe belongs to (if any), with the OTHER members
+ *  resolved to card summaries for linking. Returns null if it's not in a group. */
+export async function getMealGroupForRecipe(recipeId: string): Promise<MealGroup | null> {
+  const c = client();
+  if (!c) return null;
+  // meal_groups is a small curated table — fetch all and match in JS. (A
+  // PostgREST jsonb `cs` filter works, but supabase-js's .contains() serializes
+  // a JS array as a Postgres array literal `{…}`, which never matches jsonb.)
+  const { data, error } = await c
+    .from('meal_groups')
+    .select('id,title,title_es,note,note_es,recipe_ids');
+  if (error || !data?.length) return null;
+  const groups = data as Array<{
+    id: string; title: string; title_es: string | null;
+    note: string | null; note_es: string | null; recipe_ids: string[];
+  }>;
+  const g = groups.find(grp => Array.isArray(grp.recipe_ids) && grp.recipe_ids.includes(recipeId));
+  if (!g) return null;
+  const others = g.recipe_ids.filter(x => x !== recipeId);
+  if (!others.length) return null;
+  const { data: sibs } = await c
+    .from('recipes')
+    .select('id,title,title_es,image_url')
+    .in('id', others);
+  const byId = new Map((sibs as MealGroupSibling[] | null ?? []).map(s => [s.id, s]));
+  // Preserve the curated order from recipe_ids.
+  const siblings = others
+    .map(id => byId.get(id))
+    .filter((s): s is MealGroupSibling => !!s);
+  if (!siblings.length) return null;
+  return { id: g.id, title: g.title, title_es: g.title_es, note: g.note, note_es: g.note_es, siblings };
 }

@@ -44,5 +44,23 @@ export interface Recipe {
 
 export type RecipeFormData = Omit<Recipe, 'id' | 'created_at' | 'updated_at' | 'title_es' | 'description_es' | 'notes_es' | 'steps_es' | 'ingredients_es' | 'tags_es' | 'translated_at'>;
 
+export interface MealGroupSibling {
+  id: string;
+  title: string;
+  title_es?: string | null;
+  image_url?: string | null;
+}
+
+/** A curated set of recipes meant to be made/served together, with a shared
+ *  timing/coordination note. `siblings` are the OTHER recipes in the group. */
+export interface MealGroup {
+  id: string;
+  title: string;
+  title_es?: string | null;
+  note?: string | null;
+  note_es?: string | null;
+  siblings: MealGroupSibling[];
+}
+
 export type Locale = 'en' | 'es';
 export const LOCALES: Locale[] = ['en', 'es'];

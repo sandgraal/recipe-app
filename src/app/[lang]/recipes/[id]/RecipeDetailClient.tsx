@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Recipe } from '@/lib/types';
+import { Recipe, MealGroup } from '@/lib/types';
 import {
   t, formatTime, localizeUnit, localizeCuisine, type Locale,
   recipeTitle, recipeDescription, recipeNotes, recipeSteps,
@@ -12,7 +12,7 @@ import {
 } from '@/lib/i18n';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
-import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer } from 'lucide-react';
+import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer, UtensilsCrossed } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -320,7 +320,7 @@ function TranslateBanner({ recipeId, lang, onTranslated }: {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 
-export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { recipe: Recipe; lang: string }) {
+export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGroup = null }: { recipe: Recipe; lang: string; mealGroup?: MealGroup | null }) {
   const locale = lang as Locale;
   const id = initialRecipe.id;
   const router = useRouter();
@@ -406,6 +406,8 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
     .filter(l => !l.trim().toLowerCase().startsWith('photo:'))
     .join('\n').trim();
   const showHealthDisclaimer = hasHealthTag(recipe.tags);
+  const mealTitle = mealGroup ? (locale === 'es' ? mealGroup.title_es || mealGroup.title : mealGroup.title) : '';
+  const mealNote = mealGroup ? (locale === 'es' ? mealGroup.note_es || mealGroup.note : mealGroup.note || mealGroup.note_es) : '';
 
   return (
     <>
@@ -643,6 +645,40 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang }: { re
             </div>
           </div>
         </div>
+
+        {/* Make it a meal — curated pairings + timing/coordination note */}
+        {mealGroup && mealGroup.siblings.length > 0 && (
+          <section className="mt-10 border p-5 sm:p-6"
+            style={{ background: 'var(--note-bg)', borderColor: 'var(--border)', borderRadius: 'var(--radius-md)' }}>
+            <div className="flex items-center gap-2 mb-1" style={{ color: 'var(--accent)' }}>
+              <UtensilsCrossed size={16} aria-hidden="true" />
+              <span className="text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>{t(locale, 'recipe_make_a_meal')}</span>
+            </div>
+            <h2 className="text-xl mb-3" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
+              {mealTitle}
+            </h2>
+            {mealNote && (
+              <p className="text-sm leading-relaxed whitespace-pre-line mb-4 max-w-3xl" style={{ color: 'var(--text)' }}>{mealNote}</p>
+            )}
+            <div className="flex flex-wrap gap-3">
+              {mealGroup.siblings.map(sib => (
+                <Link key={sib.id} href={`/${lang}/recipes/${sib.id}`}
+                  className="inline-flex items-center gap-2.5 pr-4 border transition-opacity hover:opacity-80"
+                  style={{ background: 'var(--card)', borderColor: 'var(--border)', borderRadius: '999px' }}>
+                  <span className="relative flex-shrink-0 overflow-hidden flex items-center justify-center"
+                    style={{ width: 40, height: 40, borderRadius: '999px', background: 'var(--bg)' }}>
+                    {sib.image_url
+                      ? <Image src={sib.image_url} alt="" fill className="object-cover" sizes="40px" />
+                      : <UtensilsCrossed size={15} aria-hidden="true" style={{ color: 'var(--muted)' }} />}
+                  </span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                    {locale === 'es' ? sib.title_es || sib.title : sib.title}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Delete dialog */}
