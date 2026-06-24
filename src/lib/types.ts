@@ -78,6 +78,15 @@ export interface ShoppingAisle {
   items: ShoppingItem[];
 }
 
+/** A lightweight meal for listings/cards: slug, title, and member recipes
+ *  (for the collage thumbnail). */
+export interface MealSummary {
+  slug: string;
+  title: string;
+  title_es?: string | null;
+  recipes: MealGroupSibling[];
+}
+
 /** A full meal: the group + its member recipes + the consolidated shopping list. */
 export interface Meal {
   id: string;

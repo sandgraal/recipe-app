@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import RecipeCard from '@/components/RecipeCard';
-import { Recipe } from '@/lib/types';
+import MealCard from '@/components/MealCard';
+import { Recipe, MealSummary } from '@/lib/types';
 import { t, getGreeting, localizeCuisine, localizeTag, type Locale } from '@/lib/i18n';
 import { Search, X } from 'lucide-react';
 import { useAdmin } from '@/lib/useAdmin';
@@ -191,7 +192,7 @@ function SearchOverlay({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function HomeClient({ recipes: initialRecipes, lang }: { recipes: Recipe[]; lang: string }) {
+export default function HomeClient({ recipes: initialRecipes, meals = [], lang }: { recipes: Recipe[]; meals?: MealSummary[]; lang: string }) {
   const locale = lang as Locale;
 
   // Server-fetched catalog (props) — rendered into the initial HTML, no client
@@ -430,6 +431,31 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
               viewAllLabel={t(locale, 'home_all_n', { n: totalCount })}
               onViewAll={() => setShowGrid(true)}
             />
+
+            {/* Make it a meal — prominent feature node */}
+            {meals.length > 0 && (
+              <section className="mb-12 rounded-2xl border p-5 sm:p-7"
+                style={{ background: 'linear-gradient(135deg, rgba(31,138,112,0.08), rgba(241,103,69,0.06))', borderColor: 'var(--border)' }}>
+                <div className="flex items-end justify-between gap-3 mb-5">
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl leading-tight" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
+                      {t(locale, 'recipe_make_a_meal')}
+                    </h2>
+                    <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{t(locale, 'meals_tagline')}</p>
+                  </div>
+                  <Link href={`/${lang}/meals`} className="text-sm font-medium whitespace-nowrap hover:opacity-70" style={{ color: 'var(--secondary)' }}>
+                    {t(locale, 'meals_see_all')} →
+                  </Link>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+                  {meals.map(m => (
+                    <div key={m.slug} className="flex-shrink-0" style={{ width: 280, scrollSnapAlign: 'start' }}>
+                      <MealCard meal={m} lang={lang} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Quick meals */}
             {quickMeals.length >= 3 && (
