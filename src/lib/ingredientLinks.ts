@@ -12,22 +12,31 @@ export interface IngredientRecipeCandidate {
   title_es?: string | null;
 }
 
-const CONDIMENT_TAGS = new Set(['Condiments', 'Condiment', 'Sauces', 'Preserves', 'Fermented']);
-const EXTRA_TITLES = new Set(['Steamed White Rice', 'Pita Bread']);
+// Exported so `getIngredientLinkCandidateRecipes` in recipes.ts can filter
+// for these server-side (tag overlap / title match) instead of fetching
+// every recipe row and filtering in memory.
+export const CONDIMENT_TAGS = ['Condiments', 'Condiment', 'Sauces', 'Preserves', 'Fermented'];
+export const INGREDIENT_RECIPE_EXTRA_TITLES = ['Steamed White Rice', 'Pita Bread'];
+
+const CONDIMENT_TAG_SET = new Set(CONDIMENT_TAGS);
+const EXTRA_TITLE_SET = new Set(INGREDIENT_RECIPE_EXTRA_TITLES);
 
 export function isIngredientRecipe(recipe: { title: string; tags?: string[] | null }): boolean {
-  return EXTRA_TITLES.has(recipe.title) || (recipe.tags ?? []).some(tag => CONDIMENT_TAGS.has(tag));
+  return EXTRA_TITLE_SET.has(recipe.title) || (recipe.tags ?? []).some(tag => CONDIMENT_TAG_SET.has(tag));
 }
 
-/** Given all recipe cards, return the subset eligible to be linked from
- *  another recipe's ingredient list (excluding the current recipe itself). */
-export function getIngredientLinkCandidates<T extends { id: string; title: string; tags?: string[] | null }>(
-  allCards: T[],
+/** Shapes rows already narrowed to ingredient-recipe candidates (see
+ *  `getIngredientLinkCandidateRecipes` in recipes.ts, which does the actual
+ *  filtering server-side) into what the matcher/renderer need, excluding the
+ *  current recipe so nothing links to itself. Re-checks `isIngredientRecipe`
+ *  as a cheap defense in depth in case the caller passes an unfiltered list. */
+export function toIngredientLinkCandidates<T extends { id: string; title: string; title_es?: string | null; tags?: string[] | null }>(
+  rows: T[],
   excludeRecipeId: string,
 ): IngredientRecipeCandidate[] {
-  return allCards
-    .filter(c => c.id !== excludeRecipeId && isIngredientRecipe(c))
-    .map(c => ({ id: c.id, title: c.title, title_es: (c as { title_es?: string | null }).title_es ?? null }));
+  return rows
+    .filter(r => r.id !== excludeRecipeId && isIngredientRecipe(r))
+    .map(r => ({ id: r.id, title: r.title, title_es: r.title_es ?? null }));
 }
 
 // Phrases (English and known Spanish translations — auto-translation isn't

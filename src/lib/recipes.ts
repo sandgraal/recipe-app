@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase';
 import { Recipe, MealGroup, MealGroupSibling, Meal, MealSummary, ShoppingAisle } from '@/lib/types';
+import { CONDIMENT_TAGS, INGREDIENT_RECIPE_EXTRA_TITLES } from '@/lib/ingredientLinks';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Fail soft if Supabase env isn't available (e.g. a build without DB access):
@@ -40,6 +41,26 @@ export async function getRecipeCards(): Promise<Recipe[]> {
     .order('created_at', { ascending: false });
   if (error || !data) return [];
   return data as unknown as Recipe[];
+}
+
+const INGREDIENT_LINK_FIELDS = 'id,title,title_es,tags';
+
+/** Recipes eligible to be auto-linked from another recipe's ingredient text
+ *  (condiments/sauces/ferments by tag, plus a small allow-list of staples
+ *  that don't carry those tags) — filtered server-side via two narrow
+ *  queries so recipe detail pages don't pull every recipe row just to find
+ *  a handful of candidates. See src/lib/ingredientLinks.ts for the matching
+ *  logic and for what counts as an "ingredient recipe". */
+export async function getIngredientLinkCandidateRecipes(): Promise<Array<Pick<Recipe, 'id' | 'title' | 'title_es' | 'tags'>>> {
+  const c = client();
+  if (!c) return [];
+  const [byTag, byTitle] = await Promise.all([
+    c.from('recipes').select(INGREDIENT_LINK_FIELDS).overlaps('tags', CONDIMENT_TAGS),
+    c.from('recipes').select(INGREDIENT_LINK_FIELDS).in('title', INGREDIENT_RECIPE_EXTRA_TITLES),
+  ]);
+  const rows = [...(byTag.data ?? []), ...(byTitle.data ?? [])] as Array<Pick<Recipe, 'id' | 'title' | 'title_es' | 'tags'>>;
+  const byId = new Map(rows.map(r => [r.id, r]));
+  return [...byId.values()];
 }
 
 export async function getAllRecipeIds(): Promise<string[]> {

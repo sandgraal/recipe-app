@@ -63,7 +63,8 @@ function renderTextWithIngredientLink(text: string, match: { matchedText: string
     <>
       {text.slice(0, idx)}
       <Link href={`/${lang}/recipes/${recipe.id}`} onClick={e => e.stopPropagation()}
-        className="underline underline-offset-2" style={{ color: 'var(--secondary)' }} title={label}>
+        className="underline underline-offset-2" style={{ color: 'var(--secondary)' }} title={label}
+        aria-label={`${locale === 'es' ? 'Ver receta' : 'View recipe'}: ${label}`}>
         {text.slice(idx, idx + match.matchedText.length)}
       </Link>
       {text.slice(idx + match.matchedText.length)}
