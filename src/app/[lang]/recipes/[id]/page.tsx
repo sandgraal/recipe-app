@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getRecipeById, getAllRecipeIds, getMealGroupsForRecipe } from '@/lib/recipes';
+import { getRecipeById, getAllRecipeIds, getMealGroupsForRecipe, getRecipeCards } from '@/lib/recipes';
 import { recipeTitle, recipeDescription, localizeCuisine, type Locale } from '@/lib/i18n';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
+import { getIngredientLinkCandidates } from '@/lib/ingredientLinks';
 import RecipeSchema from '@/components/RecipeSchema';
 import RecipeDetailClient from './RecipeDetailClient';
 
@@ -52,10 +53,17 @@ export default async function RecipeDetailPage(
   const recipe = await getRecipeById(id);
   if (!recipe) notFound();
   const mealGroups = await getMealGroupsForRecipe(id);
+  const allCards = await getRecipeCards();
+  const ingredientLinkCandidates = getIngredientLinkCandidates(allCards, id);
   return (
     <>
       <RecipeSchema recipe={recipe} lang={lang as Locale} />
-      <RecipeDetailClient recipe={recipe} lang={lang} mealGroups={mealGroups} />
+      <RecipeDetailClient
+        recipe={recipe}
+        lang={lang}
+        mealGroups={mealGroups}
+        ingredientLinkCandidates={ingredientLinkCandidates}
+      />
     </>
   );
 }

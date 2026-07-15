@@ -10,6 +10,7 @@ import {
   recipeTitle, recipeDescription, recipeNotes, recipeSteps,
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
+import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingredientLinks';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
 import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer, UtensilsCrossed } from 'lucide-react';
@@ -47,6 +48,27 @@ function scaleAmount(amount: string, multiplier: number): string {
   const frac = rounded - whole;
   const fracStr = frac < 0.2 ? '⅛' : frac < 0.4 ? '¼' : frac < 0.6 ? '½' : frac < 0.9 ? '¾' : '';
   return whole > 0 ? `${whole}${fracStr}` : fracStr || String(rounded.toFixed(1));
+}
+
+/** Splits `text` at the matched substring and wraps it in a link to the
+ *  single matching recipe. Only called when there's exactly one candidate —
+ *  ambiguous (multi-candidate) matches render as a "see: A, B, C" line
+ *  instead, since no single link is correct. */
+function renderTextWithIngredientLink(text: string, match: { matchedText: string; recipes: IngredientRecipeCandidate[] }, lang: string, locale: Locale) {
+  const idx = text.toLowerCase().indexOf(match.matchedText.toLowerCase());
+  if (idx === -1) return text;
+  const recipe = match.recipes[0];
+  const label = locale === 'es' ? recipe.title_es || recipe.title : recipe.title;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <Link href={`/${lang}/recipes/${recipe.id}`} onClick={e => e.stopPropagation()}
+        className="underline underline-offset-2" style={{ color: 'var(--secondary)' }} title={label}>
+        {text.slice(idx, idx + match.matchedText.length)}
+      </Link>
+      {text.slice(idx + match.matchedText.length)}
+    </>
+  );
 }
 
 // ── Timer ────────────────────────────────────────────────────────────────────
@@ -320,7 +342,7 @@ function TranslateBanner({ recipeId, lang, onTranslated }: {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 
-export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGroups = [] }: { recipe: Recipe; lang: string; mealGroups?: MealGroup[] }) {
+export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGroups = [], ingredientLinkCandidates = [] }: { recipe: Recipe; lang: string; mealGroups?: MealGroup[]; ingredientLinkCandidates?: IngredientRecipeCandidate[] }) {
   const locale = lang as Locale;
   const id = initialRecipe.id;
   const router = useRouter();
@@ -564,6 +586,11 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                 <ul className="space-y-1">
                   {recipe.ingredients.map((ing, i) => {
                     const translated = recipeIngredientItem(recipe, i, locale);
+                    const itemMatch = findIngredientLink(translated.item, ingredientLinkCandidates, recipe.id);
+                    const notesMatch = !itemMatch && translated.notes
+                      ? findIngredientLink(translated.notes, ingredientLinkCandidates, recipe.id)
+                      : null;
+                    const match = itemMatch ?? notesMatch;
                     return (
                       <li key={i}
                         role="checkbox"
@@ -580,9 +607,36 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                         <span className="w-14 flex-shrink-0 text-right font-medium" style={{ color: 'var(--accent)' }}>
                           {scaleAmount(ing.amount, multiplier)} {localizeUnit(ing.unit, locale)}
                         </span>
-                        <span style={{ color: 'var(--text)', textDecoration: checked.has(i) ? 'line-through' : 'none' }}>
-                          {translated.item}
-                          {translated.notes && <span style={{ color: 'var(--muted)' }}> ({translated.notes})</span>}
+                        <span className="flex-1">
+                          <span style={{ color: 'var(--text)', textDecoration: checked.has(i) ? 'line-through' : 'none' }}>
+                            {itemMatch && itemMatch.recipes.length === 1
+                              ? renderTextWithIngredientLink(translated.item, itemMatch, lang, locale)
+                              : translated.item}
+                            {translated.notes && (
+                              <span style={{ color: 'var(--muted)' }}>
+                                {' '}(
+                                {notesMatch && notesMatch.recipes.length === 1
+                                  ? renderTextWithIngredientLink(translated.notes, notesMatch, lang, locale)
+                                  : translated.notes}
+                                )
+                              </span>
+                            )}
+                          </span>
+                          {match && match.recipes.length > 1 && (
+                            <span className="block text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
+                              {locale === 'es' ? 'Ver: ' : 'See: '}
+                              {match.recipes.map((r, ri) => (
+                                <span key={r.id}>
+                                  {ri > 0 && ', '}
+                                  <Link href={`/${lang}/recipes/${r.id}`} onClick={e => e.stopPropagation()}
+                                    className="underline underline-offset-2" style={{ color: 'var(--secondary)' }}>
+                                    {locale === 'es' ? r.title_es || r.title : r.title}
+                                  </Link>
+                                </span>
+                              ))}
+                              {' — '}{locale === 'es' ? 'cada una con su propio picor y sabor' : 'each with its own heat and flavor'}
+                            </span>
+                          )}
                         </span>
                       </li>
                     );
