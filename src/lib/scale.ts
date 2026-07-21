@@ -40,7 +40,8 @@ const EIGHTH_GLYPH: Record<number, string> = {
 };
 
 // "1-2", "2 to 3", "1–2". A range has no single correct scaling, so we leave it.
-const RANGE = /\d\s*(?:-|–|—|to)\s*\d/i;
+// Note: exclude mixed-number shorthand like "1-1/2" (meaning "1 1/2").
+const RANGE = /(?:\d\s*(?:to)\s*\d)|(?:\d\s*[-–—]\s*\d)|(?:\d[-–—]\d(?!\s*\/\d))/i;
 
 /** Numeric value of one whitespace-separated token, or null if it is not one. */
 function tokenValue(token: string): number | null {
