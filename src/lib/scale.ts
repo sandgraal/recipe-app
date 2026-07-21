@@ -46,7 +46,9 @@ const RANGE = /(?:\d\s*(?:to)\s*\d)|(?:\d\s*[-–—]\s*\d)|(?:\d[-–—]\d(?!\
 /** Numeric value of one whitespace-separated token, or null if it is not one. */
 function tokenValue(token: string): number | null {
   if (token.includes('/')) {
-    const [numerator, denominator] = token.split('/');
+    const parts = token.split('/');
+    if (parts.length !== 2) return null;
+    const [numerator, denominator] = parts;
     const n = Number.parseFloat(numerator);
     const d = Number.parseFloat(denominator);
     if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return null;
