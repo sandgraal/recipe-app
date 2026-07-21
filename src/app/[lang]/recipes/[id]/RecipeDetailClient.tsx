@@ -11,6 +11,7 @@ import {
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
 import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingredientLinks';
+import { scaleAmount } from '@/lib/scale';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
 import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer, UtensilsCrossed } from 'lucide-react';
@@ -22,32 +23,6 @@ function extractMinutes(text: string): number | null {
   if (!m) return null;
   const n = parseInt(m[1]);
   return /hours?|hrs?/i.test(m[0]) ? n * 60 : n;
-}
-
-function scaleAmount(amount: string, multiplier: number): string {
-  if (!amount || multiplier === 1) return amount;
-  const fractions: Record<string, number> = { '½': 0.5, '⅓': 1/3, '⅔': 2/3, '¼': 0.25, '¾': 0.75, '⅛': 0.125 };
-  let val = amount.trim();
-  for (const [sym, num] of Object.entries(fractions)) val = val.replace(sym, String(num));
-  const parts = val.split(/\s+/);
-  let total = 0;
-  for (const p of parts) {
-    if (p.includes('/')) {
-      const [n, d] = p.split('/').map(Number);
-      total += n / d;
-    } else {
-      const n = parseFloat(p);
-      if (!isNaN(n)) total += n;
-    }
-  }
-  if (!total) return amount;
-  const scaled = total * multiplier;
-  const rounded = Math.round(scaled * 8) / 8;
-  if (rounded === Math.floor(rounded)) return String(rounded);
-  const whole = Math.floor(rounded);
-  const frac = rounded - whole;
-  const fracStr = frac < 0.2 ? '⅛' : frac < 0.4 ? '¼' : frac < 0.6 ? '½' : frac < 0.9 ? '¾' : '';
-  return whole > 0 ? `${whole}${fracStr}` : fracStr || String(rounded.toFixed(1));
 }
 
 /** Splits `text` at the matched substring and wraps it in a link to the
