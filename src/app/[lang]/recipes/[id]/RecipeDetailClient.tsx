@@ -83,20 +83,17 @@ function StepTimer({ minutes, lang = 'en' }: { minutes: number; lang?: Locale })
   const es = lang === 'es';
   const [secs, setSecs] = useState(minutes * 60);
   const [running, setRunning] = useState(false);
-  const interval = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const alarmed = useRef(false);
 
+  // One interval per run (keyed on `running`) — not torn down and recreated
+  // every tick as a `[running, secs]` dependency would.
   useEffect(() => {
-    if (running && secs > 0) {
-      interval.current = setInterval(() => setSecs(s => s - 1), 1000);
-    } else {
-      if (interval.current) clearInterval(interval.current);
-    }
-    return () => { if (interval.current) clearInterval(interval.current); };
-  }, [running, secs]);
+    if (!running) return;
+    const id = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, [running]);
 
-  // Fire a kitchen alarm once when the countdown reaches zero.
+  // Fire a kitchen alarm once when the countdown reaches zero, and stop.
   useEffect(() => {
     if (secs === 0) {
       if (!alarmed.current) { alarmed.current = true; setRunning(false); playAlarm(); }

@@ -47,13 +47,17 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
 
-  // Navigations: network-first → cached page → offline fallback.
+  // Navigations: network-first → cached page → offline fallback. Only cache a
+  // successful same-origin HTML response, so 404/500s can't poison the cache and
+  // get served offline later.
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
+          if (res.ok && res.type === 'basic') {
+            const copy = res.clone();
+            caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
+          }
           return res;
         })
         .catch(() => caches.match(req).then((c) => c || caches.match('/offline.html')))
