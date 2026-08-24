@@ -57,7 +57,7 @@ export default async function SearchPage(
           </p>
         ) : (
           <>
-            <p className="text-sm mb-5" style={{ color: 'var(--muted)' }}>{countLabel}</p>
+            <p className="text-sm mb-5" style={{ color: 'var(--muted)' }} role="status" aria-live="polite">{countLabel}</p>
             <RecipeGrid recipes={recipes} lang={lang} />
           </>
         )}

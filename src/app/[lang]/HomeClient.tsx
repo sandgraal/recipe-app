@@ -247,6 +247,9 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
   const recent = featurable.slice(0, 20);
   const hero = recent[0];
   const heroSecondary = recent.slice(1, 3);
+  // Don't repeat the hero cluster in the "Recently Added" row below it.
+  const heroClusterIds = new Set([hero, ...heroSecondary].filter(Boolean).map(r => r.id));
+  const recentRow = recent.filter(r => !heroClusterIds.has(r.id));
 
   const quickMeals = featurable.filter(r => {
     if (!r.total_time) return false;
@@ -427,7 +430,7 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
             {/* Recently added */}
             <RecipeRow
               title={t(locale, 'home_recently_added')}
-              recipes={recent}
+              recipes={recentRow}
               viewAllLabel={t(locale, 'home_all_n', { n: totalCount })}
               onViewAll={() => setShowGrid(true)}
             />
