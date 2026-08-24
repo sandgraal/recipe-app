@@ -158,6 +158,69 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow);
   }
+
+  /* Badges — small status/label pills (recipe category, difficulty, meal cues). */
+  .badge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+  .badge--accent { background: var(--accent); color: #fff; }
+  .badge--secondary { background: var(--secondary); color: #fff; }
+  .badge--soft {
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  /* Chips — interactive, toggleable filters. Active state via aria-pressed, so
+     the markup stays declarative and no inline style branching is needed. */
+  .chip {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+    transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+  }
+  .chip:hover { border-color: var(--secondary); color: var(--text); }
+  .chip[aria-pressed='true'] {
+    background: var(--secondary);
+    border-color: var(--secondary);
+    color: #fff;
+  }
+
+  .section-heading {
+    font-family: var(--font-display);
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  /* Motion: a gentle lift on hover — replaces per-component JS mouseover shadow
+     swaps. Neutralized automatically by the prefers-reduced-motion block above. */
+  .hover-lift { transition: transform var(--motion-fast), box-shadow var(--motion-fast); }
+  .hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+  /* Loading shimmer for skeleton placeholders. */
+  .skeleton {
+    background: linear-gradient(90deg, var(--border) 25%, var(--card) 37%, var(--border) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: var(--radius-sm);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
 }
 
 /* Print: a clean, ink-friendly recipe sheet. Hides interactive chrome and forces
