@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ADMIN_COOKIE, ADMIN_UI_COOKIE } from '@/lib/authConstants';
 import { adminSessionToken } from '@/lib/adminSession';
+import { isProduction } from '@/lib/runtime';
 
 /**
  * Server-side authorization for admin/write API routes.
@@ -21,9 +22,9 @@ export { adminSessionToken };
 
 export function writeAllowed(req: NextRequest): boolean {
   const secret = process.env.ADMIN_PASSWORD;
-  // Default-deny in production when unset (a deploy that forgets ADMIN_PASSWORD
-  // must NOT silently expose writes); stay open in dev/preview for convenience.
-  if (!secret) return process.env.NODE_ENV !== 'production';
+  // Default-deny on a real production deploy when unset (a deploy that forgets
+  // ADMIN_PASSWORD must NOT silently expose writes); stay open in dev/preview.
+  if (!secret) return !isProduction();
   const viaBearer = (req.headers.get('authorization') || '') === `Bearer ${secret}`;
   const viaCookie = req.cookies.get(ADMIN_COOKIE)?.value === adminSessionToken(secret);
   return viaBearer || viaCookie;

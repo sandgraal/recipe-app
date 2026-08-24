@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { isProduction } from '@/lib/runtime';
 
 /**
  * Environment validation. Intentionally LENIENT — it warns about
@@ -30,7 +31,7 @@ export function validateEnv(): void {
   // In production, writes/admin/AI-write endpoints are DENIED without this
   // (writeAllowed default-denies). Surface it loudly so a forgotten env is
   // obvious in the logs rather than a silent "admin doesn't work".
-  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_PASSWORD) {
+  if (isProduction() && !process.env.ADMIN_PASSWORD) {
     logger.error('env: ADMIN_PASSWORD is not set in production — write/admin/import endpoints are DENIED until it is set.');
   }
 }
