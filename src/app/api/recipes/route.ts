@@ -24,8 +24,10 @@ export async function GET(req: NextRequest) {
   // When searching, go through the search_recipes() SQL function so the query
   // also matches ingredient names (in both languages), not just title/cuisine/
   // description. It returns `setof recipes`, so all facet filters chain on top.
+  // When searching, preserve the RPC's relevance (ts_rank) order — don't force
+  // created_at. Non-search listings stay newest-first.
   const base = f.q
-    ? supabase.rpc('search_recipes', { q: f.q }).order('created_at', { ascending: false })
+    ? supabase.rpc('search_recipes', { q: f.q })
     : supabase.from('recipes').select('*').order('created_at', { ascending: false });
 
   const { data, error } = await applyRecipeFilters(base, f);
