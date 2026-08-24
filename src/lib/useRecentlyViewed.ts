@@ -13,7 +13,7 @@ function read(): string[] {
   try {
     const raw = localStorage.getItem(KEY);
     const val = raw ? JSON.parse(raw) : [];
-    return Array.isArray(val) ? val : [];
+    return Array.isArray(val) ? val.filter((x): x is string => typeof x === 'string') : [];
   } catch {
     return [];
   }
