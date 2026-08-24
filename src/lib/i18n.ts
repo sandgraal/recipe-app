@@ -43,6 +43,10 @@ export const translations = {
     search_page_placeholder: 'Search by name, ingredient, cuisine…',
     search_page_prompt: 'Search your whole collection — titles, cuisines, and ingredients, in either language.',
     search_page_none: 'No recipes found for',
+    units_label: 'Measurement units',
+    units_original: 'Original',
+    units_metric: 'Metric',
+    units_imperial: 'Imperial',
     // Personal layer
     favorite: 'Save to favorites',
     unfavorite: 'Remove from favorites',
@@ -242,6 +246,10 @@ export const translations = {
     search_page_placeholder: 'Busca por nombre, ingrediente, cocina…',
     search_page_prompt: 'Busca en toda tu colección — títulos, cocinas e ingredientes, en cualquier idioma.',
     search_page_none: 'No se encontraron recetas para',
+    units_label: 'Unidades de medida',
+    units_original: 'Original',
+    units_metric: 'Métrico',
+    units_imperial: 'Imperial',
     // Personal layer
     favorite: 'Guardar en favoritos',
     unfavorite: 'Quitar de favoritos',
