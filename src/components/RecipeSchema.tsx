@@ -1,19 +1,23 @@
 import { Recipe } from '@/lib/types';
 import {
   recipeTitle, recipeDescription, recipeSteps, recipeIngredientItem,
-  localizeUnit, localizeCuisine, recipeTags, type Locale,
+  localizeUnit, localizeCuisine, localizeRecipeCategory, recipeTags, type Locale,
 } from '@/lib/i18n';
+import { isoFromMinutes, parseMinutes } from '@/lib/time';
 import { SITE_NAME } from '@/lib/site';
 
-/** "45 min" / "1 hour 30 min" → ISO-8601 duration (PT1H30M). */
-function isoDuration(text?: string | null): string | undefined {
-  if (!text) return undefined;
-  const h = text.match(/(\d+)\s*(?:h|hr|hour)/i);
-  const m = text.match(/(\d+)\s*(?:m|min)/i);
-  const hours = h ? parseInt(h[1]) : 0;
-  const mins = m ? parseInt(m[1]) : 0;
-  if (!hours && !mins) return undefined;
-  return `PT${hours ? `${hours}H` : ''}${mins ? `${mins}M` : ''}`;
+// schema.org RestrictedDiet URLs for the dietary flags that have a canonical
+// value (pescatarian/keto have none in schema.org, so they're omitted).
+const DIET_SCHEMA_URL: Record<string, string> = {
+  vegetarian: 'https://schema.org/VegetarianDiet',
+  vegan: 'https://schema.org/VeganDiet',
+  'gluten-free': 'https://schema.org/GlutenFreeDiet',
+  'dairy-free': 'https://schema.org/LowLactoseDiet',
+};
+
+/** Total time as ISO-8601: prefer the numeric minutes, fall back to the string. */
+function isoTotal(recipe: Recipe): string | undefined {
+  return isoFromMinutes(recipe.total_time_min ?? parseMinutes(recipe.total_time));
 }
 
 /**
@@ -40,8 +44,17 @@ export default function RecipeSchema({ recipe, lang }: { recipe: Recipe; lang: L
     author: { '@type': 'Organization', name: SITE_NAME },
     inLanguage: lang,
     recipeCuisine: recipe.cuisine ? localizeCuisine(recipe.cuisine, lang) : undefined,
+    recipeCategory: recipe.category ? localizeRecipeCategory(recipe.category, lang) : undefined,
     keywords: recipeTags(recipe, lang).join(', ') || undefined,
-    totalTime: isoDuration(recipe.total_time),
+    prepTime: isoFromMinutes(recipe.prep_time_min),
+    cookTime: isoFromMinutes(recipe.cook_time_min),
+    totalTime: isoTotal(recipe),
+    suitableForDiet: (() => {
+      const urls = (recipe.dietary || [])
+        .map(d => DIET_SCHEMA_URL[d.trim().toLowerCase()])
+        .filter((u): u is string => !!u);
+      return urls.length ? urls : undefined;
+    })(),
     recipeYield: recipe.servings ? String(recipe.servings) : undefined,
     recipeIngredient: ingredients.length ? ingredients : undefined,
     recipeInstructions: steps.length

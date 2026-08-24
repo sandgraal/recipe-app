@@ -23,6 +23,17 @@ export interface Recipe {
   total_time?: string | null;
   cuisine?: string | null;
   tags: string[];
+  // Structured taxonomy (all nullable/additive). `category` and `difficulty`
+  // are controlled vocab (see src/lib/taxonomy.ts); `region` is country-level
+  // and split out of `cuisine`; `dietary` is a multi-value flag array. The
+  // `*_time_min` integers complement the human-readable `total_time` string.
+  category?: string | null;
+  region?: string | null;
+  dietary?: string[] | null;
+  difficulty?: string | null;
+  prep_time_min?: number | null;
+  cook_time_min?: number | null;
+  total_time_min?: number | null;
   ingredients: Ingredient[];
   steps: Step[];
   notes?: string | null;
