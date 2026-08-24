@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { Recipe } from '@/lib/types';
 import { recipeTitle, recipeTags, formatTime, localizeCuisine, localizeRecipeCategory, localizeDifficulty, type Locale } from '@/lib/i18n';
 import { thumbhashToDataUrl } from '@/lib/thumbhash';
+import FavoriteButton from './FavoriteButton';
 import { Clock, Users, UtensilsCrossed } from 'lucide-react';
 
 const GRADIENTS = [
@@ -59,6 +60,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
         {/* Gradient overlay */}
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, rgba(15,10,8,0.85) 0%, rgba(15,10,8,0.3) 50%, transparent 100%)' }} />
+        <FavoriteButton recipeId={recipe.id} lang={lang} presentation="card" />
 
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 p-5">
@@ -111,6 +113,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
               {localizeRecipeCategory(recipe.category, locale)}
             </span>
           )}
+          <FavoriteButton recipeId={recipe.id} lang={lang} presentation="card" />
         </div>
         <div className="p-4">
           <h3 className="text-base leading-snug mb-1 line-clamp-2"

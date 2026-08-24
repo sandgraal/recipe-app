@@ -8,6 +8,8 @@ import { Recipe, MealSummary } from '@/lib/types';
 import { t, getGreeting, localizeCuisine, localizeTag, type Locale } from '@/lib/i18n';
 import { Search, X } from 'lucide-react';
 import { useAdmin } from '@/lib/useAdmin';
+import { useFavorites } from '@/lib/useFavorites';
+import { useRecentlyViewed } from '@/lib/useRecentlyViewed';
 
 function parseMinutes(time: string): number {
   const h = time.match(/(\d+)\s*h/i);
@@ -205,6 +207,8 @@ export default function HomeClient({ recipes: initialRecipes, meals = [], lang }
   const [showSearch, setShowSearch] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const { isAdmin } = useAdmin();
+  const { favorites } = useFavorites();
+  const recentIds = useRecentlyViewed();
 
   const isFiltering = !!(search || cuisine || activeTag);
 
@@ -250,6 +254,12 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
   // Don't repeat the hero cluster in the "Recently Added" row below it.
   const heroClusterIds = new Set([hero, ...heroSecondary].filter(Boolean).map(r => r.id));
   const recentRow = recent.filter(r => !heroClusterIds.has(r.id));
+
+  // Personal rows (client-only, from localStorage): favorites + recently viewed.
+  // Include photoless recipes too — the user explicitly chose these.
+  const byId = new Map(allRecipes.map(r => [r.id, r]));
+  const favoriteRecipes = favorites.map(fid => byId.get(fid)).filter((r): r is Recipe => !!r);
+  const recentlyViewed = recentIds.map(rid => byId.get(rid)).filter((r): r is Recipe => !!r);
 
   const quickMeals = featurable.filter(r => {
     if (!r.total_time) return false;
@@ -426,6 +436,16 @@ const featurable = allRecipes.filter(r => !!r.image_url?.trim());
                 {t(locale, 'home_all_recipes', { n: totalCount })}
               </button>
             </div>
+
+            {/* Favorites (personal, client-only) */}
+            {favoriteRecipes.length > 0 && (
+              <RecipeRow title={t(locale, 'home_favorites')} recipes={favoriteRecipes} />
+            )}
+
+            {/* Recently viewed (personal, client-only) */}
+            {recentlyViewed.length > 0 && (
+              <RecipeRow title={t(locale, 'home_recently_viewed')} recipes={recentlyViewed} />
+            )}
 
             {/* Recently added */}
             <RecipeRow
