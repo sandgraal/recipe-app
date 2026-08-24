@@ -43,6 +43,11 @@ const EIGHTH_GLYPH: Record<number, string> = {
 // Note: exclude mixed-number shorthand like "1-1/2" (meaning "1 1/2").
 const RANGE = /(?:\d\s*(?:to)\s*\d)|(?:\d\s*[-–—]\s*\d)|(?:\d[-–—]\d(?!\s*\/\d))/i;
 
+/** True when the amount expresses a range ("1-2", "2 to 3") — no single value. */
+export function isRange(amount: string): boolean {
+  return RANGE.test(amount);
+}
+
 /** Numeric value of one whitespace-separated token, or null if it is not one. */
 function tokenValue(token: string): number | null {
   if (token.includes('/')) {
@@ -69,7 +74,7 @@ function tokenValue(token: string): number | null {
  * wrote. Tokens are consumed left to right and stop at the first non-numeric one,
  * because "2 large 1" should not somehow total 3.
  */
-function splitQuantity(amount: string): { value: number; suffix: string } | null {
+export function splitQuantity(amount: string): { value: number; suffix: string } | null {
   // Glyphs are padded with spaces before tokenising so "1½" reads as two tokens.
   let text = amount.trim();
   for (const glyph of Object.keys(FRACTION_VALUE)) {

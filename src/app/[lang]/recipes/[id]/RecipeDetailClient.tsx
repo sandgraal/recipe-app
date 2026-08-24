@@ -12,6 +12,8 @@ import {
 } from '@/lib/i18n';
 import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingredientLinks';
 import { scaleAmount, scaleStepText } from '@/lib/scale';
+import { convertedIngredient, convertTemperatureInText, type UnitSystem } from '@/lib/convert';
+import { useUnitSystem } from '@/lib/useUnitSystem';
 import { thumbhashToDataUrl } from '@/lib/thumbhash';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { recordRecentlyViewed } from '@/lib/useRecentlyViewed';
@@ -397,6 +399,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   const router = useRouter();
 
   const { isAdmin } = useAdmin();
+  const [unitSystem, setUnitSystem] = useUnitSystem();
   // Seeded from the server-fetched recipe (props) — no client fetch on mount, so
   // the content is in the initial HTML. We keep local state so the translate
   // banner can refresh the recipe in place.
@@ -481,11 +484,15 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   const displayDescription = recipeDescription(recipe, locale);
   const displayNotes = recipeNotes(recipe, locale);
   const displaySteps = recipeSteps(recipe, locale).sort((a, b) => a.order - b.order);
-  // Scale quantities inline in the step text too when servings change (times and
-  // temperatures are left untouched by scaleStepText).
-  const displayStepsScaled = multiplier === 1
-    ? displaySteps
-    : displaySteps.map(s => ({ ...s, text: scaleStepText(s.text, multiplier) }));
+  // Steps get two independent rewrites of their text: inline quantity scaling
+  // when servings change (scaleStepText — never touches times/temps), and, when a
+  // non-original unit system is chosen, °F ⇄ °C conversion. The two target
+  // disjoint tokens, so applying them in sequence composes cleanly.
+  const displayStepsConverted = displaySteps.map(s => {
+    let text = multiplier === 1 ? s.text : scaleStepText(s.text, multiplier);
+    if (unitSystem !== 'original') text = convertTemperatureInText(text, unitSystem);
+    return text === s.text ? s : { ...s, text };
+  });
   const displayTags = recipeTags(recipe, locale);
   const needsTranslation = locale === 'es' && !hasSpanishTranslation(recipe);
 
@@ -504,7 +511,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   return (
     <>
       {cookMode && (
-        <CookMode recipe={recipe} lang={locale} steps={displayStepsScaled} onClose={() => setCookMode(false)} />
+        <CookMode recipe={recipe} lang={locale} steps={displayStepsConverted} onClose={() => setCookMode(false)} />
       )}
 
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -656,6 +663,22 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                   </div>
                 )}
               </div>
+              {/* Metric ⇄ imperial toggle — converts amounts and step temps. */}
+              <div className="flex border mb-4 text-xs overflow-hidden" data-no-print
+                role="group" aria-label={t(locale, 'units_label')}
+                style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                {(['original', 'metric', 'imperial'] as UnitSystem[]).map(sys => (
+                  <button key={sys} onClick={() => setUnitSystem(sys)}
+                    aria-pressed={unitSystem === sys}
+                    className="flex-1 py-1.5 font-medium transition-colors"
+                    style={{
+                      background: unitSystem === sys ? 'var(--accent)' : 'transparent',
+                      color: unitSystem === sys ? '#fff' : 'var(--muted)',
+                    }}>
+                    {t(locale, `units_${sys}`)}
+                  </button>
+                ))}
+              </div>
               {recipe.ingredients?.length > 0 ? (
                 <ul className="space-y-1">
                   {recipe.ingredients.map((ing, i) => {
@@ -678,8 +701,15 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                           style={{ borderColor: checked.has(i) ? 'var(--secondary)' : 'var(--border)', background: checked.has(i) ? 'var(--secondary)' : 'transparent' }}>
                           {checked.has(i) && <span className="text-white text-xs">✓</span>}
                         </span>
-                        <span className="w-14 flex-shrink-0 text-right font-medium" style={{ color: 'var(--accent)' }}>
-                          {scaleAmount(ing.amount, multiplier)} {localizeUnit(ing.unit, locale)}
+                        <span className="w-16 flex-shrink-0 text-right font-medium" style={{ color: 'var(--accent)' }}>
+                          {(() => {
+                            const conv = unitSystem !== 'original'
+                              ? convertedIngredient(ing.amount, ing.unit, multiplier, unitSystem)
+                              : null;
+                            return conv
+                              ? `${conv.amount} ${localizeUnit(conv.unit, locale)}`
+                              : `${scaleAmount(ing.amount, multiplier)} ${localizeUnit(ing.unit, locale)}`;
+                          })()}
                         </span>
                         <span className="flex-1">
                           <span style={{ color: 'var(--text)', textDecoration: checked.has(i) ? 'line-through' : 'none' }}>
@@ -734,9 +764,9 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
             <h2 className="text-lg mb-4" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
               {t(locale, 'recipe_instructions')}
             </h2>
-            {displaySteps.length > 0 ? (
+            {displayStepsConverted.length > 0 ? (
               <ol className="space-y-6">
-                {displayStepsScaled.map(step => {
+                {displayStepsConverted.map(step => {
                   const mins = extractMinutes(step.text);
                   return (
                     <li key={step.order} className="flex gap-4">
