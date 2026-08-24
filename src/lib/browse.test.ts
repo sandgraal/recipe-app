@@ -84,4 +84,11 @@ describe('sortRecipes', () => {
     expect(sortRecipes(list, 'difficulty').map(x => x.difficulty)).toEqual(['easy', 'medium', 'hard']);
     expect(sortRecipes(list, 'newest').map(x => x.title)).toEqual(['Apple', 'Cherry', 'Banana']);
   });
+
+  it("'relevance' preserves the incoming (server ts_rank) order", () => {
+    const list = [
+      r({ title: 'Banana' }), r({ title: 'Apple' }), r({ title: 'Cherry' }),
+    ];
+    expect(sortRecipes(list, 'relevance').map(x => x.title)).toEqual(['Banana', 'Apple', 'Cherry']);
+  });
 });

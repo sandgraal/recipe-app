@@ -34,7 +34,8 @@ export default async function SearchPage(
   const locale = lang as Locale;
   const q = (Array.isArray(sp.q) ? sp.q[0] : sp.q)?.trim() || '';
 
-  const recipes = q ? await getRecipeCardsFiltered({ q, sort: 'newest' }) : [];
+  // 'relevance' preserves the search RPC's ts_rank ordering (best matches first).
+  const recipes = q ? await getRecipeCardsFiltered({ q, sort: 'relevance' }) : [];
   const count = recipes.length;
   const countLabel = count === 1
     ? t(locale, 'browse_count_one', { n: count })

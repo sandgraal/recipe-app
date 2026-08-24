@@ -7,7 +7,9 @@ import type { Recipe } from './types';
 import { RECIPE_CATEGORIES, DIFFICULTIES, DIETARY_FLAGS, SUGGESTED_REGIONS } from './taxonomy';
 
 export const SORT_KEYS = ['newest', 'quickest', 'az', 'difficulty'] as const;
-export type SortKey = (typeof SORT_KEYS)[number];
+// 'relevance' is a valid sort but not a UI option — it means "preserve the
+// server's ts_rank order" and is used only for keyword search results.
+export type SortKey = (typeof SORT_KEYS)[number] | 'relevance';
 export const DEFAULT_SORT: SortKey = 'newest';
 
 export const MAX_TIME_OPTIONS = [15, 30, 45, 60] as const;
@@ -107,6 +109,8 @@ const DIFFICULTY_RANK: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
 export function sortRecipes(recipes: Recipe[], sort: SortKey = DEFAULT_SORT): Recipe[] {
   const arr = [...recipes];
   switch (sort) {
+    case 'relevance':
+      return arr; // preserve the server's ts_rank order (keyword search)
     case 'az':
       return arr.sort((a, b) => a.title.localeCompare(b.title));
     case 'quickest':
