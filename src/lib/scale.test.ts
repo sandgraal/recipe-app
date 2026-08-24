@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scaleAmount, formatAmount } from '@/lib/scale';
+import { scaleAmount, formatAmount, scaleStepText } from '@/lib/scale';
 
 describe('scaleAmount — fraction glyphs', () => {
   // Regression: glyphs used to be substituted without a separator, so "1½"
@@ -117,5 +117,29 @@ describe('scaleAmount — parsing and passthrough', () => {
 
   it('falls back to decimals below an eighth rather than showing 0', () => {
     expect(scaleAmount('⅛', 0.25)).toBe('0.03');
+  });
+});
+
+describe('scaleStepText', () => {
+  it('scales quantities that are followed by a measurement unit', () => {
+    // The number scales; the author's unit word is left untouched (no risky
+    // pluralization), consistent with scaleAmount.
+    expect(scaleStepText('Add 1 cup flour and 2 tbsp oil.', 2)).toBe('Add 2 cup flour and 4 tbsp oil.');
+    expect(scaleStepText('Stir in 1½ cups broth.', 2)).toBe('Stir in 3 cups broth.');
+  });
+
+  it('never scales temperatures, times, or dimensions', () => {
+    expect(scaleStepText('Bake at 350°F for 20 minutes.', 2)).toBe('Bake at 350°F for 20 minutes.');
+    expect(scaleStepText('Use an 8-inch pan for 45 min.', 2)).toBe('Use an 8-inch pan for 45 min.');
+  });
+
+  it('leaves ranges alone', () => {
+    expect(scaleStepText('Add 1-2 cloves garlic.', 2)).toBe('Add 1-2 cloves garlic.');
+    expect(scaleStepText('Simmer 2 to 3 cups stock.', 2)).toBe('Simmer 2 to 3 cups stock.');
+  });
+
+  it('is a no-op at multiplier 1 or on empty text', () => {
+    expect(scaleStepText('Add 1 cup flour.', 1)).toBe('Add 1 cup flour.');
+    expect(scaleStepText('', 2)).toBe('');
   });
 });

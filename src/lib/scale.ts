@@ -137,3 +137,31 @@ export function scaleAmount(amount: string | null | undefined, multiplier: numbe
   const scaled = formatAmount(quantity.value * multiplier);
   return quantity.suffix ? `${scaled} ${quantity.suffix}` : scaled;
 }
+
+// ── Step-text scaling ─────────────────────────────────────────────────────────
+// Scale quantities that appear INLINE in instruction text ("add 1 cup flour"),
+// so doubling servings updates the steps too. Deliberately conservative: it only
+// scales a number that is immediately followed by a measurement unit, and NEVER
+// temperatures, times, or dimensions ("bake at 350°F for 20 minutes", "8-inch
+// pan") — those don't scale with servings, and a wrong number is worse than an
+// unscaled one (see scaleAmount above). Ranges are left alone.
+
+const STEP_UNITS = [
+  'cups?', 'tablespoons?', 'tbsps?', 'tbs', 'teaspoons?', 'tsps?',
+  'ounces?', 'oz', 'pounds?', 'lbs?', 'grams?', 'g', 'kilograms?', 'kg',
+  'milliliters?', 'millilitres?', 'ml', 'liters?', 'litres?', 'l',
+  'cloves?', 'cans?', 'jars?', 'sticks?', 'slices?', 'pinch(?:es)?',
+  'handfuls?', 'packages?', 'pkgs?', 'quarts?', 'gallons?', 'pints?', 'sprigs?',
+];
+const QTY = String.raw`\d+\.\d+|\d+\s+\d+\/\d+|\d+\/\d+|\d+[½⅓⅔¼¾⅛⅜⅝⅞]?|[½⅓⅔¼¾⅛⅜⅝⅞]`;
+const STEP_SCALE_RE = new RegExp(`(${QTY})(\\s*)(${STEP_UNITS.join('|')})\\b`, 'gi');
+
+export function scaleStepText(text: string, multiplier: number): string {
+  if (!text || !Number.isFinite(multiplier) || multiplier <= 0 || multiplier === 1) return text;
+  return text.replace(STEP_SCALE_RE, (match, qty: string, sp: string, unit: string, offset: number, full: string) => {
+    // Skip a number that is the tail of a range ("1-2 cloves", "2 to 3 cups").
+    const before = full.slice(Math.max(0, offset - 5), offset);
+    if (/[\d)]\s*[-–—]\s*$/.test(before) || /\bto\s+$/i.test(before)) return match;
+    return `${scaleAmount(qty, multiplier)}${sp}${unit}`;
+  });
+}
