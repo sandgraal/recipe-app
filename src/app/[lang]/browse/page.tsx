@@ -72,7 +72,7 @@ export default async function BrowsePage(
         <h1 className="text-3xl leading-tight" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--text)' }}>
           {t(locale, 'browse_title')}
         </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{countLabel}</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--muted)' }} role="status" aria-live="polite">{countLabel}</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">

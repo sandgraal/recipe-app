@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, type TouchEvent as ReactTouchEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,6 +12,7 @@ import {
 } from '@/lib/i18n';
 import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingredientLinks';
 import { scaleAmount } from '@/lib/scale';
+import { useWakeLock } from '@/lib/useWakeLock';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
 import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer, UtensilsCrossed } from 'lucide-react';
@@ -23,6 +24,35 @@ function extractMinutes(text: string): number | null {
   if (!m) return null;
   const n = parseInt(m[1]);
   return /hours?|hrs?/i.test(m[0]) ? n * 60 : n;
+}
+
+/** Kitchen alarm when a step timer finishes: a short triple beep + vibration.
+ *  Best-effort — silently no-ops where Web Audio / vibration is unavailable. */
+function playAlarm() {
+  try {
+    const AC = window.AudioContext
+      || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (AC) {
+      const ctx = new AC();
+      const beep = (start: number) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.type = 'sine';
+        o.frequency.value = 880;
+        const at = ctx.currentTime + start;
+        g.gain.setValueAtTime(0.0001, at);
+        g.gain.exponentialRampToValueAtTime(0.3, at + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + 0.25);
+        o.start(at);
+        o.stop(at + 0.26);
+      };
+      beep(0); beep(0.35); beep(0.7);
+      setTimeout(() => ctx.close().catch(() => {}), 1200);
+    }
+  } catch { /* audio blocked — ignore */ }
+  try { navigator.vibrate?.([200, 100, 200]); } catch { /* unsupported — ignore */ }
 }
 
 /** Splits `text` at the matched substring and wraps it in a link to the
@@ -53,16 +83,24 @@ function StepTimer({ minutes, lang = 'en' }: { minutes: number; lang?: Locale })
   const es = lang === 'es';
   const [secs, setSecs] = useState(minutes * 60);
   const [running, setRunning] = useState(false);
-  const interval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const alarmed = useRef(false);
 
+  // One interval per run (keyed on `running`) — not torn down and recreated
+  // every tick as a `[running, secs]` dependency would.
   useEffect(() => {
-    if (running && secs > 0) {
-      interval.current = setInterval(() => setSecs(s => s - 1), 1000);
+    if (!running) return;
+    const id = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  // Fire a kitchen alarm once when the countdown reaches zero, and stop.
+  useEffect(() => {
+    if (secs === 0) {
+      if (!alarmed.current) { alarmed.current = true; setRunning(false); playAlarm(); }
     } else {
-      if (interval.current) clearInterval(interval.current);
+      alarmed.current = false;
     }
-    return () => { if (interval.current) clearInterval(interval.current); };
-  }, [running, secs]);
+  }, [secs]);
 
   const m = Math.floor(secs / 60).toString().padStart(2, '0');
   const s = (secs % 60).toString().padStart(2, '0');
@@ -76,7 +114,7 @@ function StepTimer({ minutes, lang = 'en' }: { minutes: number; lang?: Locale })
         <rect x="0" y="1" width="28" height="4" rx="2" fill="var(--border)" />
         <rect x="0" y="1" width={28 * (1 - pct / 100)} height="4" rx="2" fill={done ? '#22c55e' : 'var(--secondary)'} />
       </svg>
-      <span className="font-mono">{done ? '✓ Done' : `${m}:${s}`}</span>
+      <span className="font-mono" aria-live="polite">{done ? (es ? '✓ Listo' : '✓ Done') : `${m}:${s}`}</span>
       {!done && (
         <button onClick={() => setRunning(r => !r)}
           aria-label={running ? (es ? 'Pausar temporizador' : 'Pause timer') : (es ? 'Iniciar temporizador' : 'Start timer')}
@@ -196,19 +234,50 @@ function CookMode({ recipe, lang, steps, onClose }: {
 }) {
   const [idx, setIdx] = useState(0);
   const step = steps[idx];
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
+
+  // Keep the screen awake while cooking.
+  useWakeLock(true);
 
   useEffect(() => {
+    // Move focus into the dialog on open; restore it on close.
+    const prevActive = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowLeft') setIdx(i => Math.max(0, i - 1));
-      else if (e.key === 'ArrowRight') setIdx(i => Math.min(steps.length - 1, i + 1));
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'ArrowLeft') { setIdx(i => Math.max(0, i - 1)); return; }
+      if (e.key === 'ArrowRight') { setIdx(i => Math.min(steps.length - 1, i + 1)); return; }
+      if (e.key === 'Tab') {
+        // Trap Tab within the overlay so focus can't wander to the page behind.
+        const nodes = dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], [tabindex]:not([tabindex="-1"])',
+        );
+        const list = nodes ? Array.from(nodes) : [];
+        if (list.length === 0) { e.preventDefault(); return; }
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); prevActive?.focus?.(); };
   }, [onClose, steps.length]);
 
+  const onTouchStart = (e: ReactTouchEvent) => { touchStartX.current = e.changedTouches[0].clientX; };
+  const onTouchEnd = (e: ReactTouchEvent) => {
+    if (touchStartX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 50) return; // ignore taps / tiny drags
+    if (dx < 0) setIdx(i => Math.min(steps.length - 1, i + 1));
+    else setIdx(i => Math.max(0, i - 1));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#1a1510' }}
+    <div ref={dialogRef} tabIndex={-1} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+      className="fixed inset-0 z-50 flex flex-col outline-none" style={{ background: '#1a1510' }}
       role="dialog" aria-modal="true" aria-label={recipeTitle(recipe, lang)}>
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <span className="text-white/60 text-sm">{recipeTitle(recipe, lang)}</span>
@@ -227,7 +296,7 @@ function CookMode({ recipe, lang, steps, onClose }: {
           {t(lang, 'recipe_step_of', { i: idx + 1, n: steps.length })}
         </p>
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center" aria-live="polite">
         <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 text-2xl font-bold text-white"
           style={{ background: 'var(--accent)', fontFamily: 'var(--font-display)' }}>
           {step?.order}
@@ -336,6 +405,16 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   const [servings, setServings] = useState<number>(initialRecipe.servings || 1);
   const [origServings, setOrigServings] = useState<number>(initialRecipe.servings || 1);
   const [checked, setChecked] = useState<Set<number>>(new Set());
+  const checkKey = `recipe-check:${id}`;
+
+  // Restore ticked ingredients from a previous session (localStorage — no account
+  // needed), mirroring how the meal shopping list persists.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(checkKey);
+      if (raw) setChecked(new Set(JSON.parse(raw) as number[]));
+    } catch { /* ignore */ }
+  }, [checkKey]);
 
   const loadRecipe = useCallback(() => {
     fetch(`/api/recipes/${id}`)
@@ -354,9 +433,10 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
     setChecked(prev => {
       const next = new Set(prev);
       next.has(i) ? next.delete(i) : next.add(i);
+      try { localStorage.setItem(checkKey, JSON.stringify([...next])); } catch { /* ignore */ }
       return next;
     });
-  }, []);
+  }, [checkKey]);
 
   async function handleDelete() {
     setDeleting(true);
@@ -622,7 +702,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                 <p className="text-sm" style={{ color: 'var(--muted)' }}>{t(locale, 'recipe_no_ingredients')}</p>
               )}
               {checked.size > 0 && (
-                <button onClick={() => setChecked(new Set())}
+                <button onClick={() => { setChecked(new Set()); try { localStorage.removeItem(checkKey); } catch { /* ignore */ } }}
                   className="mt-4 w-full py-2 text-xs border"
                   style={{ borderColor: 'var(--border)', color: 'var(--muted)', borderRadius: 'var(--radius-sm)' }}>
                   {t(locale, 'recipe_clear_checked', { n: checked.size })}
