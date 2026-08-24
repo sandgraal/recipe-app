@@ -14,6 +14,8 @@ import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingred
 import { scaleAmount, scaleStepText } from '@/lib/scale';
 import { thumbhashToDataUrl } from '@/lib/thumbhash';
 import { useWakeLock } from '@/lib/useWakeLock';
+import { recordRecentlyViewed } from '@/lib/useRecentlyViewed';
+import FavoriteButton from '@/components/FavoriteButton';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
 import CookNotes from '@/components/CookNotes';
@@ -409,6 +411,9 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const checkKey = `recipe-check:${id}`;
 
+  // Track this recipe as recently viewed (for the home "Recently viewed" row).
+  useEffect(() => { recordRecentlyViewed(id); }, [id]);
+
   // Restore ticked ingredients from a previous session (localStorage — no account
   // needed), mirroring how the meal shopping list persists.
   useEffect(() => {
@@ -510,6 +515,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
             {t(locale, 'recipe_back')}
           </Link>
           <div className="flex gap-2">
+            <FavoriteButton recipeId={id} lang={lang} presentation="button" label />
             <button onClick={() => window.print()}
               aria-label={locale === 'es' ? 'Imprimir receta' : 'Print recipe'}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border"

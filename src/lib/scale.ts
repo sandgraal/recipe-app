@@ -153,7 +153,9 @@ const STEP_UNITS = [
   'cloves?', 'cans?', 'jars?', 'sticks?', 'slices?', 'pinch(?:es)?',
   'handfuls?', 'packages?', 'pkgs?', 'quarts?', 'gallons?', 'pints?', 'sprigs?',
 ];
-const QTY = String.raw`\d+\.\d+|\d+\s+\d+\/\d+|\d+\/\d+|\d+[½⅓⅔¼¾⅛⅜⅝⅞]?|[½⅓⅔¼¾⅛⅜⅝⅞]`;
+// Whole+fraction forms ("1 1/2", "1 ½") come first so the leading whole number
+// is captured with its fraction, not left behind as a stray "1" ("1 1 cups").
+const QTY = String.raw`\d+\.\d+|\d+\s+\d+\/\d+|\d+\s+[½⅓⅔¼¾⅛⅜⅝⅞]|\d+\/\d+|\d+[½⅓⅔¼¾⅛⅜⅝⅞]?|[½⅓⅔¼¾⅛⅜⅝⅞]`;
 const STEP_SCALE_RE = new RegExp(`(${QTY})(\\s*)(${STEP_UNITS.join('|')})\\b`, 'gi');
 
 export function scaleStepText(text: string, multiplier: number): string {

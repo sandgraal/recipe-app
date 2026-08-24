@@ -126,6 +126,10 @@ describe('scaleStepText', () => {
     // pluralization), consistent with scaleAmount.
     expect(scaleStepText('Add 1 cup flour and 2 tbsp oil.', 2)).toBe('Add 2 cup flour and 4 tbsp oil.');
     expect(scaleStepText('Stir in 1½ cups broth.', 2)).toBe('Stir in 3 cups broth.');
+    // Whole number + spaced fraction (glyph or slash) scales as one quantity,
+    // not "1 1 cups" / "1 1 cups broth".
+    expect(scaleStepText('Stir in 1 ½ cups broth.', 2)).toBe('Stir in 3 cups broth.');
+    expect(scaleStepText('Stir in 1 1/2 cups broth.', 2)).toBe('Stir in 3 cups broth.');
   });
 
   it('never scales temperatures, times, or dimensions', () => {

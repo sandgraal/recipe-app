@@ -15,7 +15,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = checkRateLimit(req, 'recipe-chat', { limit: 30, windowMs: 60_000 });
+  const limited = await checkRateLimit(req, 'recipe-chat', { limit: 30, windowMs: 60_000 });
   if (limited) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { ...CORS_HEADERS, 'Retry-After': String(limited.retryAfter) } });
   }

@@ -42,6 +42,7 @@ export default function CookNotes({ recipeId, lang }: { recipeId: string; lang: 
           value={draft}
           onChange={e => setDraft(e.target.value)}
           placeholder={t(locale, 'cooknotes_placeholder')}
+          aria-label={t(locale, 'cooknotes_title')}
           rows={2}
           className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
           style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--text)' }}

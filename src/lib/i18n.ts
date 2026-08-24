@@ -49,6 +49,13 @@ export const translations = {
     cooknotes_add: 'Add note',
     cooknotes_empty: 'Your notes for this recipe live here — saved on this device.',
     cooknotes_delete: 'Delete note',
+    // Personal layer
+    favorite: 'Save to favorites',
+    unfavorite: 'Remove from favorites',
+    favorite_short: 'Save',
+    favorited: 'Saved',
+    home_favorites: '⭐ Favorites',
+    home_recently_viewed: '🕘 Recently viewed',
     // Homepage
     home_title: 'My Cookbook',
     home_recently_added: 'Recently Added',
@@ -247,6 +254,13 @@ export const translations = {
     cooknotes_add: 'Agregar nota',
     cooknotes_empty: 'Tus notas para esta receta aparecen aquí — guardadas en este dispositivo.',
     cooknotes_delete: 'Eliminar nota',
+    // Personal layer
+    favorite: 'Guardar en favoritos',
+    unfavorite: 'Quitar de favoritos',
+    favorite_short: 'Guardar',
+    favorited: 'Guardada',
+    home_favorites: '⭐ Favoritas',
+    home_recently_viewed: '🕘 Vistas recientemente',
     // Homepage
     home_title: 'Mi Recetario',
     home_recently_added: 'Añadidas Recientemente',

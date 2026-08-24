@@ -105,7 +105,7 @@ function extractGalleryImages(rawHtml: string): string[] {
 
 export async function POST(req: NextRequest) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
-  const limited = checkRateLimit(req, 'import-url', { limit: 10, windowMs: 60_000 });
+  const limited = await checkRateLimit(req, 'import-url', { limit: 10, windowMs: 60_000 });
   if (limited) return json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
   const client = new Anthropic();
   let url: string | undefined;
