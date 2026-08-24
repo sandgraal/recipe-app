@@ -108,6 +108,12 @@ describe('recipeCreateSchema', () => {
     const r = recipeCreateSchema.parse({ title: 'X', total_time_min: '90' });
     expect(r.total_time_min).toBe(90);
   });
+
+  it('rejects non-integer and negative minute fields (stored as int)', () => {
+    expect(recipeCreateSchema.safeParse({ title: 'X', total_time_min: 1.5 }).success).toBe(false);
+    expect(recipeCreateSchema.safeParse({ title: 'X', prep_time_min: -5 }).success).toBe(false);
+    expect(recipeCreateSchema.safeParse({ title: 'X', cook_time_min: 0 }).success).toBe(true);
+  });
 });
 
 describe('recipeUpdateSchema', () => {

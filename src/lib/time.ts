@@ -32,11 +32,15 @@ export function parseMinutes(text: string | null | undefined): number | null {
   return Math.round(total);
 }
 
-/** Whole minutes → ISO-8601 duration (90 → "PT1H30M"), or undefined when ≤ 0. */
+/** Whole minutes → ISO-8601 duration (90 → "PT1H30M"), or undefined when ≤ 0.
+ *  Non-integer input is rounded to a whole minute first, so a value like 119.6
+ *  becomes "PT2H" rather than an invalid "PT1H60M". */
 export function isoFromMinutes(min: number | null | undefined): string | undefined {
   if (min == null || !Number.isFinite(min) || min <= 0) return undefined;
-  const h = Math.floor(min / 60);
-  const m = Math.round(min % 60);
+  const whole = Math.round(min);
+  if (whole <= 0) return undefined;
+  const h = Math.floor(whole / 60);
+  const m = whole % 60;
   const out = `PT${h ? `${h}H` : ''}${m ? `${m}M` : ''}`;
   return out === 'PT' ? undefined : out;
 }

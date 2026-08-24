@@ -35,6 +35,12 @@ describe('isoFromMinutes', () => {
     expect(isoFromMinutes(90)).toBe('PT1H30M');
   });
 
+  it('rounds non-integer minutes to a valid duration (never PT1H60M)', () => {
+    expect(isoFromMinutes(119.6)).toBe('PT2H');
+    expect(isoFromMinutes(90.4)).toBe('PT1H30M');
+    expect(isoFromMinutes(59.6)).toBe('PT1H');
+  });
+
   it('returns undefined for missing or non-positive values', () => {
     expect(isoFromMinutes(null)).toBeUndefined();
     expect(isoFromMinutes(undefined)).toBeUndefined();

@@ -52,9 +52,11 @@ const writeShape = {
   region: z.string().nullish(),
   dietary: z.array(z.string()).nullish(),
   difficulty: z.string().nullish(),
-  prep_time_min: z.coerce.number().nullish(),
-  cook_time_min: z.coerce.number().nullish(),
-  total_time_min: z.coerce.number().nullish(),
+  // Stored as Postgres integers — reject floats/negatives here so a bad value
+  // fails validation (422) instead of erroring at the DB or corrupting JSON-LD.
+  prep_time_min: z.coerce.number().int().nonnegative().nullish(),
+  cook_time_min: z.coerce.number().int().nonnegative().nullish(),
+  total_time_min: z.coerce.number().int().nonnegative().nullish(),
   ingredients: z.array(ingredientSchema).nullish(),
   steps: z.array(stepSchema).nullish(),
   notes: z.string().nullish(),

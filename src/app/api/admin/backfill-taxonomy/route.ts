@@ -64,15 +64,26 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Apply in bounded-concurrency batches rather than one-at-a-time, so a larger
+  // catalog finishes well within the serverless timeout.
+  const CONCURRENCY = 10;
   let updated = 0;
   const failures: Array<{ id: string; error: string }> = [];
-  for (const p of proposals) {
-    const { error: upErr } = await supabase.from('recipes').update(p.patch).eq('id', p.id);
-    if (upErr) {
-      failures.push({ id: p.id, error: upErr.message });
-      logger.error('backfill-taxonomy: update failed', { id: p.id, err: upErr.message });
-    } else {
-      updated += 1;
+  for (let i = 0; i < proposals.length; i += CONCURRENCY) {
+    const batch = proposals.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(async p => {
+        const { error: upErr } = await supabase.from('recipes').update(p.patch).eq('id', p.id);
+        return upErr ? { id: p.id, error: upErr.message } : null;
+      }),
+    );
+    for (const r of results) {
+      if (r) {
+        failures.push(r);
+        logger.error('backfill-taxonomy: update failed', { id: r.id, err: r.error });
+      } else {
+        updated += 1;
+      }
     }
   }
 
