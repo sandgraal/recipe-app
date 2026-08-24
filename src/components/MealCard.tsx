@@ -24,8 +24,7 @@ export default function MealCard({ meal, lang }: { meal: MealSummary; lang: stri
 
   return (
     <Link href={`/${lang}/meals/${meal.slug}`}
-      className="group flex flex-col overflow-hidden border transition-shadow hover:shadow-md"
-      style={{ background: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius-md)' }}>
+      className="card-surface hover-lift group flex flex-col overflow-hidden">
       <div className="grid gap-0.5" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', aspectRatio: '16 / 10', background: 'var(--bg)' }}>
         {imgs.length > 0 ? imgs.map((r, i) => (
           <div key={r.id} className="relative overflow-hidden" style={cellStyle(i)}>

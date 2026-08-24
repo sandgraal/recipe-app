@@ -13,6 +13,8 @@ import {
  * URL-driven facet controls. Every change rewrites the query string on the
  * current path (so /browse stays shareable and bookmarkable) and resets paging.
  * Single-select for category/region/difficulty/max-time, multi-select for diet.
+ * Chips use the token-driven `.chip` primitive; active state is expressed with
+ * aria-pressed and styled entirely in CSS.
  */
 export default function FilterRail({ lang }: { lang: string }) {
   const locale = lang as Locale;
@@ -45,9 +47,6 @@ export default function FilterRail({ lang }: { lang: string }) {
     else next.set('sort', value);
     commit(next);
   }
-  function clearAll() {
-    router.push(pathname, { scroll: false });
-  }
 
   const activeDiet = (params.get('diet') ?? '').split(',').filter(Boolean);
   const hasAny = ['category', 'region', 'cuisine', 'tag', 'diet', 'difficulty', 'max', 'q'].some(k => params.get(k));
@@ -58,11 +57,6 @@ export default function FilterRail({ lang }: { lang: string }) {
     ? (sortParam as SortKey)
     : DEFAULT_SORT;
 
-  const chip = (active: boolean): React.CSSProperties =>
-    active
-      ? { background: 'var(--secondary)', color: '#fff', borderColor: 'var(--secondary)' }
-      : { background: 'var(--card)', color: 'var(--muted)', borderColor: 'var(--border)' };
-
   return (
     <aside className="md:sticky md:top-20 space-y-6" aria-label={t(locale, 'browse_filters')}>
       <div className="flex items-center justify-between">
@@ -70,7 +64,7 @@ export default function FilterRail({ lang }: { lang: string }) {
           {t(locale, 'browse_filters')}
         </h2>
         {hasAny && (
-          <button onClick={clearAll} className="text-xs font-medium" style={{ color: 'var(--accent)' }}>
+          <button onClick={() => router.push(pathname, { scroll: false })} className="text-xs font-medium" style={{ color: 'var(--accent)' }}>
             {t(locale, 'browse_clear')}
           </button>
         )}
@@ -95,7 +89,7 @@ export default function FilterRail({ lang }: { lang: string }) {
 
       <FacetGroup label={t(locale, 'facet_category')}>
         {RECIPE_CATEGORIES.map(c => (
-          <FacetChip key={c} style={chip(params.get('category') === c)} onClick={() => toggleSingle('category', c)}>
+          <FacetChip key={c} active={params.get('category') === c} onClick={() => toggleSingle('category', c)}>
             {localizeRecipeCategory(c, locale)}
           </FacetChip>
         ))}
@@ -103,7 +97,7 @@ export default function FilterRail({ lang }: { lang: string }) {
 
       <FacetGroup label={t(locale, 'facet_region')}>
         {SUGGESTED_REGIONS.map(r => (
-          <FacetChip key={r} style={chip(params.get('region') === r)} onClick={() => toggleSingle('region', r)}>
+          <FacetChip key={r} active={params.get('region') === r} onClick={() => toggleSingle('region', r)}>
             {localizeRegion(r, locale)}
           </FacetChip>
         ))}
@@ -111,7 +105,7 @@ export default function FilterRail({ lang }: { lang: string }) {
 
       <FacetGroup label={t(locale, 'facet_dietary')}>
         {DIETARY_FLAGS.map(d => (
-          <FacetChip key={d} style={chip(activeDiet.includes(d))} onClick={() => toggleDiet(d)}>
+          <FacetChip key={d} active={activeDiet.includes(d)} onClick={() => toggleDiet(d)}>
             {localizeDietary(d, locale)}
           </FacetChip>
         ))}
@@ -119,7 +113,7 @@ export default function FilterRail({ lang }: { lang: string }) {
 
       <FacetGroup label={t(locale, 'facet_difficulty')}>
         {DIFFICULTIES.map(d => (
-          <FacetChip key={d} style={chip(params.get('difficulty') === d)} onClick={() => toggleSingle('difficulty', d)}>
+          <FacetChip key={d} active={params.get('difficulty') === d} onClick={() => toggleSingle('difficulty', d)}>
             {localizeDifficulty(d, locale)}
           </FacetChip>
         ))}
@@ -127,7 +121,7 @@ export default function FilterRail({ lang }: { lang: string }) {
 
       <FacetGroup label={t(locale, 'facet_maxtime')}>
         {MAX_TIME_OPTIONS.map(m => (
-          <FacetChip key={m} style={chip(params.get('max') === String(m))} onClick={() => toggleSingle('max', String(m))}>
+          <FacetChip key={m} active={params.get('max') === String(m)} onClick={() => toggleSingle('max', String(m))}>
             {t(locale, 'facet_upto', { n: m })}
           </FacetChip>
         ))}
@@ -146,16 +140,10 @@ function FacetGroup({ label, children }: { label: string; children: React.ReactN
 }
 
 function FacetChip({
-  children, style, onClick,
-}: { children: React.ReactNode; style: React.CSSProperties; onClick: () => void }) {
+  children, active, onClick,
+}: { children: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={style.background === 'var(--secondary)'}
-      className="px-3 py-1 rounded-full text-xs font-medium border transition-colors"
-      style={style}
-    >
+    <button type="button" onClick={onClick} aria-pressed={active} className="chip">
       {children}
     </button>
   );
