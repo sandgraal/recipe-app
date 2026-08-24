@@ -11,7 +11,7 @@ import {
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
 import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingredientLinks';
-import { scaleAmount } from '@/lib/scale';
+import { scaleAmount, scaleStepText } from '@/lib/scale';
 import { convertedIngredient, convertTemperatureInText, type UnitSystem } from '@/lib/convert';
 import { useUnitSystem } from '@/lib/useUnitSystem';
 import { thumbhashToDataUrl } from '@/lib/thumbhash';
@@ -20,6 +20,7 @@ import { recordRecentlyViewed } from '@/lib/useRecentlyViewed';
 import FavoriteButton from '@/components/FavoriteButton';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
+import CookNotes from '@/components/CookNotes';
 import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer, UtensilsCrossed } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -483,11 +484,15 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   const displayDescription = recipeDescription(recipe, locale);
   const displayNotes = recipeNotes(recipe, locale);
   const displaySteps = recipeSteps(recipe, locale).sort((a, b) => a.order - b.order);
-  // Rewrite oven/temp figures in the instruction text to match the chosen unit
-  // system (°F ⇄ °C). Ingredient amounts are converted separately, per-line.
-  const displayStepsConverted = unitSystem === 'original'
-    ? displaySteps
-    : displaySteps.map(s => ({ ...s, text: convertTemperatureInText(s.text, unitSystem) }));
+  // Steps get two independent rewrites of their text: inline quantity scaling
+  // when servings change (scaleStepText — never touches times/temps), and, when a
+  // non-original unit system is chosen, °F ⇄ °C conversion. The two target
+  // disjoint tokens, so applying them in sequence composes cleanly.
+  const displayStepsConverted = displaySteps.map(s => {
+    let text = multiplier === 1 ? s.text : scaleStepText(s.text, multiplier);
+    if (unitSystem !== 'original') text = convertTemperatureInText(text, unitSystem);
+    return text === s.text ? s : { ...s, text };
+  });
   const displayTags = recipeTags(recipe, locale);
   const needsTranslation = locale === 'es' && !hasSpanishTranslation(recipe);
 
@@ -790,6 +795,8 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                 <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--text)' }}>{cleanNotes}</p>
               </div>
             )}
+
+            <CookNotes recipeId={id} lang={lang} />
 
             <div data-no-print>
               <RecipeChat recipe={recipe} lang={locale} />

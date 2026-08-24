@@ -33,7 +33,10 @@ const METRIC = new Set(['ml', 'l', 'g', 'kg']);
 const IMPERIAL_VOL = new Set(['cup', 'tbsp', 'tsp', 'floz', 'pint', 'quart', 'gallon']);
 const IMPERIAL_WT = new Set(['oz', 'lb']);
 
-function canon(unit: string): string | null {
+function canon(unit: string | null | undefined): string | null {
+  // The recipe schema allows an ingredient's unit to be null/omitted, so guard
+  // before touching it — an unrecognized or missing unit is simply not converted.
+  if (!unit) return null;
   return UNIT_ALIASES[unit.trim().toLowerCase().replace(/\.$/, '')] ?? null;
 }
 
@@ -53,7 +56,7 @@ function formatMetric(value: number, unit: 'ml' | 'g' | 'l' | 'kg'): { amount: s
  * not convertible or is already in the target system.
  */
 export function convertMeasurement(
-  value: number, unit: string, target: 'metric' | 'imperial',
+  value: number, unit: string | null | undefined, target: 'metric' | 'imperial',
 ): { amount: string; unit: string } | null {
   const c = canon(unit);
   if (c == null || !Number.isFinite(value) || value <= 0) return null;
@@ -90,7 +93,7 @@ export function convertMeasurement(
  * original scaled display.
  */
 export function convertedIngredient(
-  amount: string, unit: string, multiplier: number, target: 'metric' | 'imperial',
+  amount: string, unit: string | null | undefined, multiplier: number, target: 'metric' | 'imperial',
 ): { amount: string; unit: string } | null {
   if (!amount || isRange(amount)) return null;
   const q = splitQuantity(amount);
@@ -99,11 +102,17 @@ export function convertedIngredient(
   return convertMeasurement(q.value * m, unit, target);
 }
 
+// A temperature must be marked as one — a degree sign or the word "degrees"
+// before the C/F. Without that guard a bare letter is ambiguous: "1 C water"
+// (1 cup) would otherwise be read as 1 °C and rewritten to "34°F water".
+const F_TEMP = /(\d+)\s*(?:°\s*|degrees?\s+)F\b/gi;
+const C_TEMP = /(\d+)\s*(?:°\s*|degrees?\s+)C\b/gi;
+
 /** Convert temperatures written in instruction text (°F ⇄ °C). */
 export function convertTemperatureInText(text: string, target: 'metric' | 'imperial'): string {
   if (!text) return text;
   if (target === 'metric') {
-    return text.replace(/(\d+)\s*°?\s*F\b/g, (_m, f: string) => `${Math.round((parseInt(f, 10) - 32) * 5 / 9)}°C`);
+    return text.replace(F_TEMP, (_m, f: string) => `${Math.round((parseInt(f, 10) - 32) * 5 / 9)}°C`);
   }
-  return text.replace(/(\d+)\s*°?\s*C\b/g, (_m, cc: string) => `${Math.round(parseInt(cc, 10) * 9 / 5 + 32)}°F`);
+  return text.replace(C_TEMP, (_m, cc: string) => `${Math.round(parseInt(cc, 10) * 9 / 5 + 32)}°F`);
 }

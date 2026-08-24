@@ -27,6 +27,12 @@ describe('convertMeasurement', () => {
     expect(convertMeasurement(2, 'clove', 'metric')).toBeNull();
     expect(convertMeasurement(2, 'pinch', 'imperial')).toBeNull();
   });
+
+  it('treats a null/undefined/empty unit as non-convertible (no crash)', () => {
+    expect(convertMeasurement(1, null, 'metric')).toBeNull();
+    expect(convertMeasurement(1, undefined, 'metric')).toBeNull();
+    expect(convertMeasurement(1, '', 'metric')).toBeNull();
+  });
 });
 
 describe('convertedIngredient', () => {
@@ -37,14 +43,24 @@ describe('convertedIngredient', () => {
     expect(convertedIngredient('1-2', 'cups', 1, 'metric')).toBeNull();
     expect(convertedIngredient('2 large', 'cups', 1, 'metric')).toBeNull();
   });
+  it('skips a missing unit rather than throwing', () => {
+    expect(convertedIngredient('2', null, 1, 'metric')).toBeNull();
+    expect(convertedIngredient('2', undefined, 1, 'metric')).toBeNull();
+  });
 });
 
 describe('convertTemperatureInText', () => {
   it('converts °F → °C for metric', () => {
     expect(convertTemperatureInText('Bake at 350°F for 20 min.', 'metric')).toBe('Bake at 177°C for 20 min.');
-    expect(convertTemperatureInText('Preheat to 400 F.', 'metric')).toBe('Preheat to 204°C.');
+    expect(convertTemperatureInText('Preheat to 400 °F.', 'metric')).toBe('Preheat to 204°C.');
+    expect(convertTemperatureInText('Preheat to 400 degrees F.', 'metric')).toBe('Preheat to 204°C.');
   });
   it('converts °C → °F for imperial', () => {
     expect(convertTemperatureInText('Bake at 180°C.', 'imperial')).toBe('Bake at 356°F.');
+  });
+  it('does not treat a bare C/F unit abbreviation as a temperature', () => {
+    // "1 C water" is one cup, not 1°C — must survive both directions untouched.
+    expect(convertTemperatureInText('Add 1 C water.', 'imperial')).toBe('Add 1 C water.');
+    expect(convertTemperatureInText('Add 1 F flour.', 'metric')).toBe('Add 1 F flour.');
   });
 });
