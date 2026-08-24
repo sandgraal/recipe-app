@@ -14,7 +14,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = checkRateLimit(req, 'translate', { limit: 20, windowMs: 60_000 });
+  const limited = await checkRateLimit(req, 'translate', { limit: 20, windowMs: 60_000 });
   if (limited) return json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
   try {
     const { recipeId } = await req.json();

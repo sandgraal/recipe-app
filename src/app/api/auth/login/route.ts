@@ -19,7 +19,7 @@ export async function OPTIONS() {
  * token is a planned hardening — see Phase 3.)
  */
 export async function POST(req: NextRequest) {
-  const limited = checkRateLimit(req, 'auth-login', { limit: 10, windowMs: 60_000 });
+  const limited = await checkRateLimit(req, 'auth-login', { limit: 10, windowMs: 60_000 });
   if (limited) {
     return NextResponse.json({ error: 'Too many attempts' }, {
       status: 429,

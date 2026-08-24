@@ -21,7 +21,9 @@ export { adminSessionToken };
 
 export function writeAllowed(req: NextRequest): boolean {
   const secret = process.env.ADMIN_PASSWORD;
-  if (!secret) return true; // not configured → open (backward compatible)
+  // Default-deny in production when unset (a deploy that forgets ADMIN_PASSWORD
+  // must NOT silently expose writes); stay open in dev/preview for convenience.
+  if (!secret) return process.env.NODE_ENV !== 'production';
   const viaBearer = (req.headers.get('authorization') || '') === `Bearer ${secret}`;
   const viaCookie = req.cookies.get(ADMIN_COOKIE)?.value === adminSessionToken(secret);
   return viaBearer || viaCookie;
