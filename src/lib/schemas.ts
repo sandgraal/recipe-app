@@ -61,6 +61,7 @@ const writeShape = {
   steps: z.array(stepSchema).nullish(),
   notes: z.string().nullish(),
   image_url: z.string().nullish(),
+  image_thumbhash: z.string().nullish(),
   gallery_images: z.array(z.string()).nullish(),
   source_url: z.string().nullish(),
   source_type: z.enum(['manual', 'url', 'text', 'photo', 'chat']).optional(),

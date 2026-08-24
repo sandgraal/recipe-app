@@ -12,6 +12,7 @@ import {
 } from '@/lib/i18n';
 import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingredientLinks';
 import { scaleAmount } from '@/lib/scale';
+import { thumbhashToDataUrl } from '@/lib/thumbhash';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
@@ -464,6 +465,10 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
     ...(recipe.gallery_images?.filter(u => u !== recipe.image_url) || []),
   ];
   const multiplier = origServings > 0 ? servings / origServings : 1;
+  // Blur placeholder applies to the cover image only (that's what the hash is of).
+  const heroBlur = allImages[activeImg] === recipe.image_url
+    ? thumbhashToDataUrl(recipe.image_thumbhash)
+    : undefined;
 
   // Use translated content when in Spanish
   const displayTitle = recipeTitle(recipe, locale);
@@ -540,7 +545,8 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
           <div className="mb-6">
             <div className="relative overflow-hidden" style={{ height: '55vh', minHeight: 280, borderRadius: 'var(--radius-md)' }}>
               <Image src={allImages[activeImg]} alt={displayTitle} fill className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 1024px" />
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                placeholder={heroBlur ? 'blur' : 'empty'} blurDataURL={heroBlur} />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(47,43,40,0.6) 0%, transparent 50%)' }} />
               {allImages.length > 1 && (
                 <>

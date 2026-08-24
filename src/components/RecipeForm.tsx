@@ -134,6 +134,11 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
       // explicit null/[] (not undefined) so removing a photo actually clears it
       // server-side instead of leaving the old value untouched.
       image_url: images[0] ?? null,
+      // Preserve the existing ThumbHash when the cover is unchanged; clear it
+      // (null) when the cover changed so the server regenerates it.
+      image_thumbhash: images[0] && images[0] === initialData?.image_url
+        ? (initialData?.image_thumbhash ?? null)
+        : null,
       gallery_images: images,
       source_type: initialData?.source_type || 'manual',
       source_url: initialData?.source_url,

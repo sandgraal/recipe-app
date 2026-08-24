@@ -4,6 +4,7 @@ import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 import { readJsonBody } from '@/lib/requestBody';
 import { recipeUpdateSchema } from '@/lib/schemas';
+import { computeThumbhashFromUrl } from '@/lib/thumbhashServer';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
@@ -30,9 +31,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!valid.success) return json({ error: 'Invalid recipe', issues: valid.error.issues }, { status: 422 });
   const supabase = getServiceSupabase();
   const { id } = await params;
+  // Recompute the ThumbHash only when the cover changed (the form clears it to
+  // null then) — an unchanged cover re-sends its existing hash, so we skip.
+  const updateData: Record<string, unknown> = { ...valid.data, updated_at: new Date().toISOString() };
+  if (valid.data.image_url && !valid.data.image_thumbhash) {
+    updateData.image_thumbhash = await computeThumbhashFromUrl(valid.data.image_url);
+  }
   const { data, error } = await supabase
     .from('recipes')
-    .update({ ...valid.data, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();

@@ -38,6 +38,7 @@ export interface Recipe {
   steps: Step[];
   notes?: string | null;
   image_url?: string | null;
+  image_thumbhash?: string | null; // base64 ThumbHash of the cover image (blur placeholder)
   gallery_images?: string[];
   source_url?: string | null;
   source_type: 'manual' | 'url' | 'text' | 'photo' | 'chat';
