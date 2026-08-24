@@ -45,6 +45,18 @@ const writeShape = {
   total_time: z.string().nullish(),
   cuisine: z.string().nullish(),
   tags: z.array(z.string()).nullish(),
+  // Structured taxonomy columns. Lightly typed on purpose (DB CHECK constraints
+  // enforce the controlled vocab for category/difficulty); the point here is to
+  // let these real columns survive the unknown-key strip, not to re-validate.
+  category: z.string().nullish(),
+  region: z.string().nullish(),
+  dietary: z.array(z.string()).nullish(),
+  difficulty: z.string().nullish(),
+  // Stored as Postgres integers — reject floats/negatives here so a bad value
+  // fails validation (422) instead of erroring at the DB or corrupting JSON-LD.
+  prep_time_min: z.coerce.number().int().nonnegative().nullish(),
+  cook_time_min: z.coerce.number().int().nonnegative().nullish(),
+  total_time_min: z.coerce.number().int().nonnegative().nullish(),
   ingredients: z.array(ingredientSchema).nullish(),
   steps: z.array(stepSchema).nullish(),
   notes: z.string().nullish(),

@@ -21,7 +21,7 @@ function client(): SupabaseClient | null {
 
 // Card listing needs far less than the full row — dropping steps/ingredients/notes
 // (the bulk of the payload) keeps the home page light.
-const CARD_FIELDS = 'id,title,title_es,image_url,cuisine,tags,tags_es,total_time,servings,created_at';
+const CARD_FIELDS = 'id,title,title_es,image_url,cuisine,region,category,dietary,difficulty,tags,tags_es,total_time,total_time_min,prep_time_min,cook_time_min,servings,created_at';
 
 export async function getRecipeById(id: string): Promise<Recipe | null> {
   const c = client();

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { RecipeFormData, Ingredient, Step } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import { getAdminHeaders } from '@/lib/useAdmin';
+import { RECIPE_CATEGORIES, DIFFICULTIES, DIETARY_FLAGS, SUGGESTED_REGIONS } from '@/lib/taxonomy';
+import { parseMinutes } from '@/lib/time';
 
 interface Props {
   initialData?: Partial<RecipeFormData>;
@@ -35,8 +37,18 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
   const [cuisine, setCuisine] = useState(initialData?.cuisine || '');
   const [totalTime, setTotalTime] = useState(initialData?.total_time || '');
   const [servings, setServings] = useState<number | ''>(initialData?.servings || '');
+  const [category, setCategory] = useState(initialData?.category || '');
+  const [region, setRegion] = useState(initialData?.region || '');
+  const [difficulty, setDifficulty] = useState(initialData?.difficulty || '');
+  const [dietary, setDietary] = useState<string[]>(initialData?.dietary || []);
+  const [prepTime, setPrepTime] = useState<number | ''>(initialData?.prep_time_min || '');
+  const [cookTime, setCookTime] = useState<number | ''>(initialData?.cook_time_min || '');
   const [tagsInput, setTagsInput] = useState((initialData?.tags || []).join(', '));
   const [notes, setNotes] = useState(initialData?.notes || '');
+
+  function toggleDietary(flag: string) {
+    setDietary(prev => (prev.includes(flag) ? prev.filter(f => f !== flag) : [...prev, flag]));
+  }
   const [ingredients, setIngredients] = useState<Ingredient[]>(
     initialData?.ingredients?.length ? initialData.ingredients : [emptyIngredient()]
   );
@@ -103,7 +115,16 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
       title: title.trim(),
       description: description.trim() || undefined,
       cuisine: cuisine.trim() || undefined,
+      region: region.trim() || undefined,
+      category: category || undefined,
+      difficulty: difficulty || undefined,
+      dietary,
       total_time: totalTime.trim() || undefined,
+      // Keep the numeric mirror in sync with what the admin typed so the new
+      // "under N minutes" filters work for manually-added recipes too.
+      total_time_min: parseMinutes(totalTime) ?? undefined,
+      prep_time_min: prepTime === '' ? undefined : Number(prepTime),
+      cook_time_min: cookTime === '' ? undefined : Number(cookTime),
       servings: servings ? Number(servings) : undefined,
       tags,
       ingredients: ingredients.filter(i => i.item.trim()),
@@ -188,6 +209,77 @@ export default function RecipeForm({ initialData, recipeId, onSave, lang = 'en' 
         <div>
           <label className={labelClass} style={labelStyle}>Servings</label>
           <input type="number" value={servings} onChange={e => setServings(e.target.value ? Number(e.target.value) : '')} placeholder="4" min={1} className={inputClass} style={inputStyle} />
+        </div>
+      </div>
+
+      {/* Region / Category / Difficulty */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className={labelClass} style={labelStyle}>Region</label>
+          <input
+            type="text"
+            value={region}
+            onChange={e => setRegion(e.target.value)}
+            placeholder="Costa Rica"
+            list="region-list"
+            className={inputClass}
+            style={inputStyle}
+          />
+          <datalist id="region-list">
+            {SUGGESTED_REGIONS.map(r => <option key={r} value={r} />)}
+          </datalist>
+        </div>
+        <div>
+          <label className={labelClass} style={labelStyle}>Category</label>
+          <select value={category} onChange={e => setCategory(e.target.value)} className={inputClass} style={inputStyle}>
+            <option value="">—</option>
+            {RECIPE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass} style={labelStyle}>Difficulty</label>
+          <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className={inputClass} style={inputStyle}>
+            <option value="">—</option>
+            {DIFFICULTIES.map(d => <option key={d} value={d}>{d[0].toUpperCase() + d.slice(1)}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Prep / Cook time (minutes) */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass} style={labelStyle}>Prep Time <span className="text-xs font-normal" style={{ color: 'var(--muted)' }}>(min)</span></label>
+          <input type="number" value={prepTime} onChange={e => setPrepTime(e.target.value ? Number(e.target.value) : '')} placeholder="15" min={0} className={inputClass} style={inputStyle} />
+        </div>
+        <div>
+          <label className={labelClass} style={labelStyle}>Cook Time <span className="text-xs font-normal" style={{ color: 'var(--muted)' }}>(min)</span></label>
+          <input type="number" value={cookTime} onChange={e => setCookTime(e.target.value ? Number(e.target.value) : '')} placeholder="30" min={0} className={inputClass} style={inputStyle} />
+        </div>
+      </div>
+
+      {/* Dietary */}
+      <div>
+        <label className={labelClass} style={labelStyle}>Dietary</label>
+        <div className="flex flex-wrap gap-2">
+          {DIETARY_FLAGS.map(flag => {
+            const active = dietary.includes(flag);
+            return (
+              <button
+                key={flag}
+                type="button"
+                onClick={() => toggleDietary(flag)}
+                aria-pressed={active}
+                className="px-3 py-1 rounded-full text-sm border transition-colors"
+                style={{
+                  borderColor: active ? 'var(--secondary)' : 'var(--border)',
+                  background: active ? 'var(--secondary)' : 'var(--card)',
+                  color: active ? '#fff' : 'var(--text)',
+                }}
+              >
+                {flag}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -82,6 +82,38 @@ describe('recipeCreateSchema', () => {
       expect(recipeCreateSchema.safeParse({ title: 'X', source_type }).success).toBe(true);
     }
   });
+
+  // The taxonomy columns are real columns — they must survive the unknown-key
+  // strip, or every write (editor + publish skill) would silently drop them.
+  it('keeps the structured taxonomy fields', () => {
+    const r = recipeCreateSchema.parse({
+      title: 'Chimichurri',
+      category: 'Sauces',
+      region: 'Costa Rica',
+      dietary: ['vegan', 'gluten-free'],
+      difficulty: 'easy',
+      prep_time_min: 10,
+      cook_time_min: 0,
+      total_time_min: 10,
+    });
+    expect(r.category).toBe('Sauces');
+    expect(r.region).toBe('Costa Rica');
+    expect(r.dietary).toEqual(['vegan', 'gluten-free']);
+    expect(r.difficulty).toBe('easy');
+    expect(r.prep_time_min).toBe(10);
+    expect(r.total_time_min).toBe(10);
+  });
+
+  it('coerces stringified minute fields to numbers', () => {
+    const r = recipeCreateSchema.parse({ title: 'X', total_time_min: '90' });
+    expect(r.total_time_min).toBe(90);
+  });
+
+  it('rejects non-integer and negative minute fields (stored as int)', () => {
+    expect(recipeCreateSchema.safeParse({ title: 'X', total_time_min: 1.5 }).success).toBe(false);
+    expect(recipeCreateSchema.safeParse({ title: 'X', prep_time_min: -5 }).success).toBe(false);
+    expect(recipeCreateSchema.safeParse({ title: 'X', cook_time_min: 0 }).success).toBe(true);
+  });
 });
 
 describe('recipeUpdateSchema', () => {

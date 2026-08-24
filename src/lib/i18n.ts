@@ -1,4 +1,5 @@
 import type { Recipe } from './types';
+import { RECIPE_CATEGORY_ES, REGION_ES, DIFFICULTY_ES, DIETARY_ES } from './taxonomy';
 
 export type Locale = 'en' | 'es';
 export const LOCALES: Locale[] = ['en', 'es'];
@@ -637,6 +638,36 @@ export function localizeCuisine(cuisine: string | null | undefined, lang: Locale
 export function localizeTag(tag: string, lang: Locale): string {
   if (lang !== 'es' || !tag) return tag;
   return TAG_ES[tag.trim().toLowerCase()] ?? tag;
+}
+
+// ── Structured taxonomy localisation ──────────────────────────────────────────
+// Controlled vocab (category/region/difficulty/dietary) is stored in English and
+// localized at render time — no per-recipe Spanish columns. The label maps are
+// the single source of truth in src/lib/taxonomy.ts. Unknown values (e.g. a
+// free-text region not in the seed list) pass through unchanged.
+
+export function localizeRecipeCategory(category: string | null | undefined, lang: Locale): string {
+  if (!category) return '';
+  if (lang !== 'es') return category;
+  return RECIPE_CATEGORY_ES[category.trim().toLowerCase()] ?? category;
+}
+
+export function localizeRegion(region: string | null | undefined, lang: Locale): string {
+  if (!region) return '';
+  if (lang !== 'es') return region;
+  return REGION_ES[region.trim().toLowerCase()] ?? region;
+}
+
+export function localizeDifficulty(difficulty: string | null | undefined, lang: Locale): string {
+  if (!difficulty) return '';
+  if (lang !== 'es') return difficulty;
+  return DIFFICULTY_ES[difficulty.trim().toLowerCase()] ?? difficulty;
+}
+
+export function localizeDietary(flag: string | null | undefined, lang: Locale): string {
+  if (!flag) return '';
+  if (lang !== 'es') return flag;
+  return DIETARY_ES[flag.trim().toLowerCase()] ?? flag;
 }
 
 // ── Greeting helper ───────────────────────────────────────────────────────────
