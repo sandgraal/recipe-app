@@ -43,6 +43,13 @@ export const translations = {
     search_page_placeholder: 'Search by name, ingredient, cuisine…',
     search_page_prompt: 'Search your whole collection — titles, cuisines, and ingredients, in either language.',
     search_page_none: 'No recipes found for',
+    // Personal layer
+    favorite: 'Save to favorites',
+    unfavorite: 'Remove from favorites',
+    favorite_short: 'Save',
+    favorited: 'Saved',
+    home_favorites: '⭐ Favorites',
+    home_recently_viewed: '🕘 Recently viewed',
     // Homepage
     home_title: 'My Cookbook',
     home_recently_added: 'Recently Added',
@@ -235,6 +242,13 @@ export const translations = {
     search_page_placeholder: 'Busca por nombre, ingrediente, cocina…',
     search_page_prompt: 'Busca en toda tu colección — títulos, cocinas e ingredientes, en cualquier idioma.',
     search_page_none: 'No se encontraron recetas para',
+    // Personal layer
+    favorite: 'Guardar en favoritos',
+    unfavorite: 'Quitar de favoritos',
+    favorite_short: 'Guardar',
+    favorited: 'Guardada',
+    home_favorites: '⭐ Favoritas',
+    home_recently_viewed: '🕘 Vistas recientemente',
     // Homepage
     home_title: 'Mi Recetario',
     home_recently_added: 'Añadidas Recientemente',
