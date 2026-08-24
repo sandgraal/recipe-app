@@ -58,7 +58,7 @@ export default async function LangLayout({
         <nav
           className="sticky top-0 z-50 backdrop-blur-sm"
           style={{
-            background: 'rgba(253,248,243,0.88)',
+            background: 'var(--nav-bg)',
             borderBottom: '1px solid var(--border)',
             boxShadow: '0 1px 0 var(--border)',
           }}

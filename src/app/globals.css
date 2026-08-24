@@ -16,6 +16,7 @@
   --secondary-hover: #186b57;
   --gold: #f7ba2a;
   --note-bg: #fdf3ec; /* warm callout for the recipe-notes box */
+  --nav-bg: rgba(253, 248, 243, 0.88); /* translucent sticky nav (theme-aware) */
 
   /* Typography */
   --font-display: 'Fraunces', 'Georgia', serif;
@@ -57,6 +58,7 @@
   --secondary: #34a98c;
   --secondary-hover: #46bb9d;
   --note-bg: #2a211b;
+  --nav-bg: rgba(23, 18, 15, 0.88);
   --shadow: 0 8px 20px rgba(0,0,0,0.40);
   --shadow-md: 0 12px 32px rgba(0,0,0,0.55);
 }
