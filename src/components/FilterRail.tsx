@@ -51,7 +51,12 @@ export default function FilterRail({ lang }: { lang: string }) {
 
   const activeDiet = (params.get('diet') ?? '').split(',').filter(Boolean);
   const hasAny = ['category', 'region', 'cuisine', 'tag', 'diet', 'difficulty', 'max', 'q'].some(k => params.get(k));
-  const currentSort = (params.get('sort') as SortKey) || DEFAULT_SORT;
+  // Validate against the known sort keys so an invalid ?sort= doesn't leave the
+  // <select> blank / out of sync with the default parseFilter() applies.
+  const sortParam = params.get('sort') ?? '';
+  const currentSort: SortKey = (SORT_KEYS as readonly string[]).includes(sortParam)
+    ? (sortParam as SortKey)
+    : DEFAULT_SORT;
 
   const chip = (active: boolean): React.CSSProperties =>
     active

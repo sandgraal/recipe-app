@@ -39,8 +39,11 @@ export function regionFromSlug(slug: string): string | null {
 // ── Parse a search-params object into a validated filter ──────────────────────
 
 type SearchParams = Record<string, string | string[] | undefined>;
+// Trim so leading/trailing whitespace from a hand-typed or copy-pasted URL
+// (notably `?q=`) doesn't change matching or make a valid query return nothing.
 function first(v: string | string[] | undefined): string | undefined {
-  return (Array.isArray(v) ? v[0] : v) || undefined;
+  const s = (Array.isArray(v) ? v[0] : v)?.trim();
+  return s || undefined;
 }
 
 export function parseFilter(sp: SearchParams): RecipeFilter {

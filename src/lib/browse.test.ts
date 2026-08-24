@@ -34,6 +34,12 @@ describe('parseFilter', () => {
     expect(f.difficulty).toBeUndefined();
     expect(f.sort).toBe('newest');
   });
+  it('trims whitespace from string params and drops empties', () => {
+    const f = parseFilter({ q: '  gallo pinto  ', category: '  Sauces ', region: '   ' });
+    expect(f.q).toBe('gallo pinto');
+    expect(f.category).toBe('Sauces');
+    expect(f.region).toBeUndefined();
+  });
   it('isFilterActive reflects any facet', () => {
     expect(isFilterActive(parseFilter({}))).toBe(false);
     expect(isFilterActive(parseFilter({ category: 'Sauces' }))).toBe(true);

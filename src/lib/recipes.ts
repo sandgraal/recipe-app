@@ -54,8 +54,10 @@ export async function getRecipeCards(): Promise<Recipe[]> {
 export async function getRecipeCardsFiltered(f: RecipeFilter): Promise<Recipe[]> {
   const c = client();
   if (!c) return [];
+  // Narrow to card fields in both branches — the RPC returns `setof recipes`,
+  // so .select() trims the heavy JSON (steps/ingredients) we don't need here.
   const base = f.q
-    ? c.rpc('search_recipes', { q: f.q })
+    ? c.rpc('search_recipes', { q: f.q }).select(CARD_FIELDS)
     : c.from('recipes').select(CARD_FIELDS);
   const { data, error } = await applyRecipeFilters(base, f);
   if (error || !data) return [];
