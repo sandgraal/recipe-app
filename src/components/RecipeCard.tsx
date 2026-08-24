@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { Recipe } from '@/lib/types';
-import { recipeTitle, recipeTags, formatTime, localizeCuisine, type Locale } from '@/lib/i18n';
+import { recipeTitle, recipeTags, formatTime, localizeCuisine, localizeRecipeCategory, localizeDifficulty, type Locale } from '@/lib/i18n';
 import { Clock, Users, UtensilsCrossed } from 'lucide-react';
 
 const GRADIENTS = [
@@ -59,8 +59,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 p-5">
           {tags.slice(0, 1).map(tag => (
-            <span key={tag} className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold mb-2"
-              style={{ background: 'var(--accent)', color: 'white' }}>
+            <span key={tag} className="badge badge--accent mb-2">
               {tag}
             </span>
           ))}
@@ -87,15 +86,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
   const tags = recipeTags(recipe, locale);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group">
-      <article className="overflow-hidden transition-all duration-200 border hover:-translate-y-0.5"
-        style={{
-          background: 'var(--card)',
-          borderColor: 'var(--border)',
-          borderRadius: 'var(--radius-md)',
-          boxShadow: 'var(--shadow)',
-        }}
-        onMouseOver={e => (e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
-        onMouseOut={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}>
+      <article className="card-surface hover-lift overflow-hidden">
         <div className="relative h-44 w-full overflow-hidden">
           {recipe.image_url ? (
             <Image
@@ -108,6 +99,11 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
           ) : (
             <div className="w-full h-full flex items-center justify-center" style={{ background: gradient }} aria-hidden="true"><UtensilsCrossed size={40} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} /></div>
           )}
+          {recipe.category && (
+            <span className="badge badge--secondary absolute top-2 left-2">
+              {localizeRecipeCategory(recipe.category, locale)}
+            </span>
+          )}
         </div>
         <div className="p-4">
           <h3 className="text-base leading-snug mb-1 line-clamp-2"
@@ -118,21 +114,14 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
             {recipe.cuisine && <span>{localizeCuisine(recipe.cuisine, locale)}</span>}
             {recipe.total_time && <><span style={{ opacity: 0.4 }}>·</span><span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> {formatTime(recipe.total_time, locale)}</span></>}
             {recipe.servings && <><span style={{ opacity: 0.4 }}>·</span><span className="inline-flex items-center gap-1"><Users size={12} aria-hidden="true" /> {recipe.servings}</span></>}
+            {recipe.difficulty && <><span style={{ opacity: 0.4 }}>·</span><span>{localizeDifficulty(recipe.difficulty, locale)}</span></>}
           </div>
           {tags.length > 0 && (
             <div className="flex gap-1 mt-3 flex-wrap">
               {tags.slice(0, 2).map(tag => (
-                <span key={tag} className="px-2 py-0.5 text-xs"
-                  style={{ background: 'var(--bg)', color: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-                  {tag}
-                </span>
+                <span key={tag} className="tag">{tag}</span>
               ))}
-              {tags.length > 2 && (
-                <span className="px-2 py-0.5 text-xs"
-                  style={{ background: 'var(--bg)', color: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-                  +{tags.length - 2}
-                </span>
-              )}
+              {tags.length > 2 && <span className="tag">+{tags.length - 2}</span>}
             </div>
           )}
         </div>
@@ -148,15 +137,7 @@ function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: str
   const title = recipeTitle(recipe, locale);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group flex-shrink-0 w-48">
-      <article className="overflow-hidden border transition-all duration-200 hover:-translate-y-0.5"
-        style={{
-          background: 'var(--card)',
-          borderColor: 'var(--border)',
-          borderRadius: 'var(--radius-md)',
-          boxShadow: 'var(--shadow)',
-        }}
-        onMouseOver={e => (e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
-        onMouseOut={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}>
+      <article className="card-surface hover-lift overflow-hidden">
         <div className="relative h-32 w-full overflow-hidden">
           {recipe.image_url ? (
             <Image
