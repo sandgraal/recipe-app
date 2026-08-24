@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { Recipe } from '@/lib/types';
-import { recipeTitle, recipeTags, formatTime, localizeCuisine, type Locale } from '@/lib/i18n';
+import { recipeTitle, recipeTags, formatTime, localizeCuisine, localizeRecipeCategory, localizeDifficulty, type Locale } from '@/lib/i18n';
 import { Clock, Users, UtensilsCrossed } from 'lucide-react';
 
 const GRADIENTS = [
@@ -108,6 +108,12 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
           ) : (
             <div className="w-full h-full flex items-center justify-center" style={{ background: gradient }} aria-hidden="true"><UtensilsCrossed size={40} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} /></div>
           )}
+          {recipe.category && (
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-semibold"
+              style={{ background: 'rgba(31,138,112,0.92)', color: '#fff' }}>
+              {localizeRecipeCategory(recipe.category, locale)}
+            </span>
+          )}
         </div>
         <div className="p-4">
           <h3 className="text-base leading-snug mb-1 line-clamp-2"
@@ -118,6 +124,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
             {recipe.cuisine && <span>{localizeCuisine(recipe.cuisine, locale)}</span>}
             {recipe.total_time && <><span style={{ opacity: 0.4 }}>·</span><span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> {formatTime(recipe.total_time, locale)}</span></>}
             {recipe.servings && <><span style={{ opacity: 0.4 }}>·</span><span className="inline-flex items-center gap-1"><Users size={12} aria-hidden="true" /> {recipe.servings}</span></>}
+            {recipe.difficulty && <><span style={{ opacity: 0.4 }}>·</span><span>{localizeDifficulty(recipe.difficulty, locale)}</span></>}
           </div>
           {tags.length > 0 && (
             <div className="flex gap-1 mt-3 flex-wrap">

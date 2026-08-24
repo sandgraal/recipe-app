@@ -5,6 +5,7 @@ import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 import { readJsonBody } from '@/lib/requestBody';
 import { recipeCreateSchema } from '@/lib/schemas';
+import { parseFilter, applyRecipeFilters } from '@/lib/browse';
 import { logger } from '@/lib/logger';
 
 function json(data: unknown, init?: ResponseInit) {
@@ -18,25 +19,16 @@ export async function OPTIONS() {
 export async function GET(req: NextRequest) {
   const supabase = getSupabase();
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get('q');
-  const cuisine = searchParams.get('cuisine');
-  const tag = searchParams.get('tag');
+  const f = parseFilter(Object.fromEntries(searchParams));
 
   // When searching, go through the search_recipes() SQL function so the query
   // also matches ingredient names (in both languages), not just title/cuisine/
-  // description. It returns `setof recipes`, so cuisine/tag still chain on top.
-  let query = q
-    ? supabase.rpc('search_recipes', { q }).order('created_at', { ascending: false })
+  // description. It returns `setof recipes`, so all facet filters chain on top.
+  const base = f.q
+    ? supabase.rpc('search_recipes', { q: f.q }).order('created_at', { ascending: false })
     : supabase.from('recipes').select('*').order('created_at', { ascending: false });
 
-  if (cuisine) {
-    query = query.ilike('cuisine', cuisine);
-  }
-  if (tag) {
-    query = query.contains('tags', [tag]);
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await applyRecipeFilters(base, f);
   if (error) return json({ error: error.message }, { status: 500 });
   return json({ recipes: data });
 }

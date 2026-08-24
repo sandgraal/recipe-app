@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import AdminButton from '@/components/AdminButton';
 import ThemeToggle from '@/components/ThemeToggle';
+import { Search } from 'lucide-react';
 import { t, type Locale } from '@/lib/i18n';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 
@@ -87,11 +88,17 @@ export default async function LangLayout({
 
             {/* Nav links + language switcher */}
             <div className="flex items-center gap-1">
-              <Link href={`/${lang}`} className="nav-pill">
+              <Link href={`/${lang}/browse`} className="nav-pill">
                 {t(locale, 'nav_browse')}
+              </Link>
+              <Link href={`/${lang}/meals`} className="nav-pill hidden sm:inline-flex">
+                {t(locale, 'nav_meals')}
               </Link>
               <Link href={`/${lang}/identify`} className="nav-cta hidden sm:inline-flex">
                 {t(locale, 'nav_pantry')}
+              </Link>
+              <Link href={`/${lang}/search`} className="nav-pill" aria-label={t(locale, 'nav_search')}>
+                <Search size={18} aria-hidden="true" />
               </Link>
               <AdminButton lang={lang} />
               <div className="ml-2 flex items-center gap-2">

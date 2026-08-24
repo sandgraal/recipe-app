@@ -1,6 +1,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { Recipe, MealGroup, MealGroupSibling, Meal, MealSummary, ShoppingAisle } from '@/lib/types';
 import { CONDIMENT_TAGS, INGREDIENT_RECIPE_EXTRA_TITLES } from '@/lib/ingredientLinks';
+import { applyRecipeFilters, sortRecipes, type RecipeFilter } from '@/lib/browse';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Fail soft if Supabase env isn't available (e.g. a build without DB access):
@@ -41,6 +42,24 @@ export async function getRecipeCards(): Promise<Recipe[]> {
     .order('created_at', { ascending: false });
   if (error || !data) return [];
   return data as unknown as Recipe[];
+}
+
+/**
+ * Server-side filtered card fetch for the browse / category / region / search
+ * pages. When `q` is set it goes through the search_recipes() RPC (ingredient-
+ * aware, bilingual); otherwise a plain card select. Facet filters are applied
+ * via the shared applyRecipeFilters(), and ordering is done in JS so nulls-last
+ * (time) and the difficulty rank behave. Fails soft to [] when env is absent.
+ */
+export async function getRecipeCardsFiltered(f: RecipeFilter): Promise<Recipe[]> {
+  const c = client();
+  if (!c) return [];
+  const base = f.q
+    ? c.rpc('search_recipes', { q: f.q })
+    : c.from('recipes').select(CARD_FIELDS);
+  const { data, error } = await applyRecipeFilters(base, f);
+  if (error || !data) return [];
+  return sortRecipes(data as unknown as Recipe[], f.sort);
 }
 
 const INGREDIENT_LINK_FIELDS = 'id,title,title_es,tags';
