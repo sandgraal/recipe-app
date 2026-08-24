@@ -6,6 +6,7 @@ import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 import { readJsonBody } from '@/lib/requestBody';
 import { recipeCreateSchema } from '@/lib/schemas';
 import { parseFilter, applyRecipeFilters } from '@/lib/browse';
+import { computeThumbhashFromUrl } from '@/lib/thumbhashServer';
 import { logger } from '@/lib/logger';
 
 function json(data: unknown, init?: ResponseInit) {
@@ -43,7 +44,12 @@ export async function POST(req: NextRequest) {
   const valid = recipeCreateSchema.safeParse(parsed.data);
   if (!valid.success) return json({ error: 'Invalid recipe', issues: valid.error.issues }, { status: 422 });
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase.from('recipes').insert([valid.data]).select().single();
+  // Generate a ThumbHash blur placeholder from the cover image (best-effort).
+  const insertData: Record<string, unknown> = { ...valid.data };
+  if (valid.data.image_url && !valid.data.image_thumbhash) {
+    insertData.image_thumbhash = await computeThumbhashFromUrl(valid.data.image_url);
+  }
+  const { data, error } = await supabase.from('recipes').insert([insertData]).select().single();
   if (error) return json({ error: error.message }, { status: 500 });
 
   // Auto-translate to Spanish on creation so new recipes are bilingual

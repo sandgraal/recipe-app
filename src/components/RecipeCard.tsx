@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { Recipe } from '@/lib/types';
 import { recipeTitle, recipeTags, formatTime, localizeCuisine, localizeRecipeCategory, localizeDifficulty, type Locale } from '@/lib/i18n';
+import { thumbhashToDataUrl } from '@/lib/thumbhash';
 import { Clock, Users, UtensilsCrossed } from 'lucide-react';
 
 const GRADIENTS = [
@@ -33,6 +34,7 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
   const locale = lang as Locale;
   const title = recipeTitle(recipe, locale);
   const tags = recipeTags(recipe, locale);
+  const blur = thumbhashToDataUrl(recipe.image_thumbhash);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group h-full">
       <article className="relative h-full overflow-hidden"
@@ -44,6 +46,8 @@ function HeroCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-700"
             sizes="(max-width: 768px) 100vw, 55vw"
+            placeholder={blur ? 'blur' : 'empty'}
+            blurDataURL={blur}
             priority
           />
         ) : (
@@ -84,6 +88,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
   const locale = lang as Locale;
   const title = recipeTitle(recipe, locale);
   const tags = recipeTags(recipe, locale);
+  const blur = thumbhashToDataUrl(recipe.image_thumbhash);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group">
       <article className="card-surface hover-lift overflow-hidden">
@@ -95,6 +100,8 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              placeholder={blur ? 'blur' : 'empty'}
+              blurDataURL={blur}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center" style={{ background: gradient }} aria-hidden="true"><UtensilsCrossed size={40} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} /></div>
@@ -135,6 +142,7 @@ function StandardCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: st
 function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: string; lang: string }) {
   const locale = lang as Locale;
   const title = recipeTitle(recipe, locale);
+  const blur = thumbhashToDataUrl(recipe.image_thumbhash);
   return (
     <Link href={`/${lang}/recipes/${recipe.id}`} className="block group flex-shrink-0 w-48">
       <article className="card-surface hover-lift overflow-hidden">
@@ -146,6 +154,8 @@ function CompactCard({ recipe, gradient, lang }: { recipe: Recipe; gradient: str
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="192px"
+              placeholder={blur ? 'blur' : 'empty'}
+              blurDataURL={blur}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center" style={{ background: gradient }} aria-hidden="true"><UtensilsCrossed size={32} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} /></div>
