@@ -11,13 +11,14 @@ import {
   recipeIngredientItem, recipeTags, hasSpanishTranslation,
 } from '@/lib/i18n';
 import { findIngredientLink, type IngredientRecipeCandidate } from '@/lib/ingredientLinks';
-import { scaleAmount } from '@/lib/scale';
+import { scaleAmount, scaleStepText } from '@/lib/scale';
 import { thumbhashToDataUrl } from '@/lib/thumbhash';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { recordRecentlyViewed } from '@/lib/useRecentlyViewed';
 import FavoriteButton from '@/components/FavoriteButton';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
+import CookNotes from '@/components/CookNotes';
 import { Play, Pause, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Globe, Clock, Users, Minus, Plus, Printer, UtensilsCrossed } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -480,6 +481,11 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   const displayDescription = recipeDescription(recipe, locale);
   const displayNotes = recipeNotes(recipe, locale);
   const displaySteps = recipeSteps(recipe, locale).sort((a, b) => a.order - b.order);
+  // Scale quantities inline in the step text too when servings change (times and
+  // temperatures are left untouched by scaleStepText).
+  const displayStepsScaled = multiplier === 1
+    ? displaySteps
+    : displaySteps.map(s => ({ ...s, text: scaleStepText(s.text, multiplier) }));
   const displayTags = recipeTags(recipe, locale);
   const needsTranslation = locale === 'es' && !hasSpanishTranslation(recipe);
 
@@ -498,7 +504,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   return (
     <>
       {cookMode && (
-        <CookMode recipe={recipe} lang={locale} steps={displaySteps} onClose={() => setCookMode(false)} />
+        <CookMode recipe={recipe} lang={locale} steps={displayStepsScaled} onClose={() => setCookMode(false)} />
       )}
 
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -730,7 +736,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
             </h2>
             {displaySteps.length > 0 ? (
               <ol className="space-y-6">
-                {displaySteps.map(step => {
+                {displayStepsScaled.map(step => {
                   const mins = extractMinutes(step.text);
                   return (
                     <li key={step.order} className="flex gap-4">
@@ -759,6 +765,8 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                 <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--text)' }}>{cleanNotes}</p>
               </div>
             )}
+
+            <CookNotes recipeId={id} lang={lang} />
 
             <div data-no-print>
               <RecipeChat recipe={recipe} lang={locale} />

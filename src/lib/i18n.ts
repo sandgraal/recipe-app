@@ -43,6 +43,12 @@ export const translations = {
     search_page_placeholder: 'Search by name, ingredient, cuisine…',
     search_page_prompt: 'Search your whole collection — titles, cuisines, and ingredients, in either language.',
     search_page_none: 'No recipes found for',
+    // Cook notes
+    cooknotes_title: 'My notes',
+    cooknotes_placeholder: 'e.g. halved the sugar, 25 min not 30…',
+    cooknotes_add: 'Add note',
+    cooknotes_empty: 'Your notes for this recipe live here — saved on this device.',
+    cooknotes_delete: 'Delete note',
     // Personal layer
     favorite: 'Save to favorites',
     unfavorite: 'Remove from favorites',
@@ -242,6 +248,12 @@ export const translations = {
     search_page_placeholder: 'Busca por nombre, ingrediente, cocina…',
     search_page_prompt: 'Busca en toda tu colección — títulos, cocinas e ingredientes, en cualquier idioma.',
     search_page_none: 'No se encontraron recetas para',
+    // Cook notes
+    cooknotes_title: 'Mis notas',
+    cooknotes_placeholder: 'ej. reduje el azúcar a la mitad, 25 min en vez de 30…',
+    cooknotes_add: 'Agregar nota',
+    cooknotes_empty: 'Tus notas para esta receta aparecen aquí — guardadas en este dispositivo.',
+    cooknotes_delete: 'Eliminar nota',
     // Personal layer
     favorite: 'Guardar en favoritos',
     unfavorite: 'Quitar de favoritos',
