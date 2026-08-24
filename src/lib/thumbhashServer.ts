@@ -11,16 +11,20 @@ export async function computeThumbhashFromUrl(url: string | null | undefined): P
   if (!url || !isPublicHttpUrl(url)) return null;
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const timer = setTimeout(() => controller.abort(), 4000); // keep writes snappy
     let buf: Buffer;
     try {
-      const res = await fetch(url, { signal: controller.signal });
+      // redirect: 'error' — isPublicHttpUrl only validates the initial URL, so
+      // forbid redirects entirely rather than risk a public → internal hop.
+      const res = await fetch(url, { signal: controller.signal, redirect: 'error' });
       if (!res.ok) return null;
+      const len = Number(res.headers.get('content-length'));
+      if (Number.isFinite(len) && len > 15_000_000) return null; // bail before downloading
       buf = Buffer.from(await res.arrayBuffer());
     } finally {
       clearTimeout(timer);
     }
-    if (buf.byteLength > 15_000_000) return null; // sanity cap
+    if (buf.byteLength > 15_000_000) return null; // fallback for chunked responses
 
     // ThumbHash needs RGBA pixels with each dimension ≤ 100.
     const { data, info } = await sharp(buf)
