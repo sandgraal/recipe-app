@@ -15,7 +15,7 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   if (!writeAllowed(req)) return json({ error: 'Unauthorized' }, { status: 401 });
-  const limited = checkRateLimit(req, 'import-text', { limit: 15, windowMs: 60_000 });
+  const limited = await checkRateLimit(req, 'import-text', { limit: 15, windowMs: 60_000 });
   if (limited) return json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
   const client = new Anthropic();
   const parsed = await readJsonBody(req);
