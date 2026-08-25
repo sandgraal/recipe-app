@@ -12,12 +12,12 @@ Every reader-facing route is locale-prefixed (`/en`, `/es`) via the `[lang]` seg
 
 ```mermaid
 flowchart LR
-  subgraph Client
-    RSC[Server components<br/>pages]
+  subgraph Browser
     CC[Client components<br/>cook mode, filters, toggles]
   end
-  subgraph Server[Route handlers /api]
-    W[writes + AI]
+  subgraph NextServer["Next.js server runtime"]
+    RSC[Server components<br/>pages, ISR-cached]
+    W[Route handlers /api<br/>writes + AI]
   end
   subgraph Supabase
     A[(anon key<br/>read-only, RLS)]
@@ -25,10 +25,11 @@ flowchart LR
     DB[(recipes / meal_groups<br/>+ Storage)]
   end
 
-  RSC -->|getSupabase • read| A
+  RSC -->|SSR/ISR HTML| CC
   CC -->|fetch /api| W
+  RSC -->|getSupabase • read| A
   W -->|getServiceSupabase • write| S
-  W -->|read| A
+  W -->|getSupabase • read| A
   A --> DB
   S --> DB
 ```
@@ -62,7 +63,7 @@ The `recipes` table is RLS-locked; reads are public (anon), writes require the s
 - **Default-deny in production:** if `ADMIN_PASSWORD` is unset, writes are denied on a real prod deploy (`VERCEL_ENV === 'production'`) but stay open in dev/preview so local work isn't blocked. `src/lib/runtime.ts` draws that prod/preview distinction (Vercel sets `NODE_ENV=production` for previews too, so `VERCEL_ENV` is the reliable signal).
 - The session cookie is a signed token (`src/lib/adminSession.ts`), httpOnly so client JS can't read it — replacing an earlier scheme that mirrored the password into localStorage.
 
-Supporting guards on the same routes: **rate limiting** (`src/lib/rateLimit.ts` — Upstash Redis when configured, in-memory fallback otherwise), an **SSRF guard** on URL import (`src/lib/ssrf.ts`), request-body validation with Zod (`src/lib/schemas.ts`, `requestBody.ts`), and a **CORS** lock to the site origin (`src/lib/cors.ts`).
+Supporting guards on the same routes: **rate limiting** (`src/lib/rateLimit.ts` — Upstash Redis when configured, in-memory fallback otherwise), an **SSRF guard** on URL import (`src/lib/ssrf.ts`), request-body validation with Zod (`src/lib/schemas.ts`, `src/lib/requestBody.ts`), and a **CORS** lock to the site origin (`src/lib/cors.ts`).
 
 ## Internationalization
 
@@ -83,8 +84,8 @@ UI strings live in one dictionary (`src/lib/i18n.ts`) keyed by a `TranslationKey
 | Data access | `src/lib/recipes.ts`, `src/lib/supabase.ts` |
 | Taxonomy / vocab | `src/lib/taxonomy.ts` |
 | Browse/filter/sort | `src/lib/browse.ts` |
-| Quantities / units / time | `src/lib/scale.ts`, `convert.ts`, `time.ts` |
-| Auth / safety | `adminAuth.ts`, `adminSession.ts`, `rateLimit.ts`, `ssrf.ts`, `cors.ts`, `schemas.ts` |
+| Quantities / units / time | `src/lib/scale.ts`, `src/lib/convert.ts`, `src/lib/time.ts` |
+| Auth / safety | `src/lib/adminAuth.ts`, `src/lib/adminSession.ts`, `src/lib/rateLimit.ts`, `src/lib/ssrf.ts`, `src/lib/cors.ts`, `src/lib/schemas.ts` |
 | i18n | `src/lib/i18n.ts` |
 | Client hooks | `src/lib/use*.ts` |
 | DB schema | `supabase/migrations/` |
