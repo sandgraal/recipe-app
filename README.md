@@ -171,3 +171,8 @@ npm run test:e2e  # end-to-end
 ## Deployment
 
 Hosted on Vercel; pushing to `main` triggers a production deploy. See [DEPLOY.md](DEPLOY.md) for first-time setup and the environment variables to configure in the Vercel dashboard.
+
+## Further reading
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — how it fits together: rendering model, read/write data flow, search, the taxonomy/region rules, and the write-auth model.
+- [DEPLOY.md](DEPLOY.md) — Vercel setup and environment configuration.
