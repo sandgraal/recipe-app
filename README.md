@@ -1,5 +1,3 @@
-# Creaciones Colibrí
-
 A bilingual (English / Spanish) personal recipe collection focused on Costa Rican home cooking. It's a Next.js web app and installable PWA with faceted browsing, full-text search, meal planning, a kitchen-friendly cook mode, metric ⇄ imperial conversion, and AI-assisted recipe import — backed by Supabase.
 
 **Live:** https://recipe-app-blush-eta.vercel.app
