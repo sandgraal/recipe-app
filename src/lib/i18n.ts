@@ -216,6 +216,25 @@ export const translations = {
     identify_try_all_filter: 'Try "All" to see partial matches',
     // Footer
     footer_store: 'Visit our store →',
+    // Admin sign-in
+    admin_login_title: 'Sign in to edit',
+    admin_login_subtitle: 'Use your Finca Colibrí account to edit, import, or delete recipes.',
+    admin_email: 'Email',
+    admin_password: 'Password',
+    admin_signin: 'Sign in',
+    admin_signing_in: 'Signing in…',
+    admin_cancel: 'Cancel',
+    admin_use_password: 'Use admin password',
+    admin_use_account: 'Use Finca account',
+    admin_password_login_subtitle: 'Enter the administrator password.',
+    admin_err_credentials: 'Incorrect email or password.',
+    admin_err_not_writer: 'This account can view the finca but not edit recipes.',
+    admin_err_rate: 'Too many attempts. Wait a minute and try again.',
+    admin_err_unavailable: 'Sign-in is unavailable right now. Try again later.',
+    admin_err_password: 'Incorrect password.',
+    admin_logout_label: 'Log out of admin',
+    admin_login_label: 'Admin login',
+    admin_logged_in_title: 'Logged in as admin',
   },
   es: {
     // Nav
@@ -425,6 +444,25 @@ export const translations = {
     identify_try_all_filter: 'Prueba "Todas" para ver coincidencias parciales',
     // Footer
     footer_store: 'Visita nuestra tienda →',
+    // Admin sign-in
+    admin_login_title: 'Inicia sesión para editar',
+    admin_login_subtitle: 'Usa tu cuenta de Finca Colibrí para editar, importar o eliminar recetas.',
+    admin_email: 'Correo electrónico',
+    admin_password: 'Contraseña',
+    admin_signin: 'Iniciar sesión',
+    admin_signing_in: 'Iniciando sesión…',
+    admin_cancel: 'Cancelar',
+    admin_use_password: 'Usar contraseña de administrador',
+    admin_use_account: 'Usar cuenta de la finca',
+    admin_password_login_subtitle: 'Ingresa la contraseña de administrador.',
+    admin_err_credentials: 'Correo o contraseña incorrectos.',
+    admin_err_not_writer: 'Esta cuenta puede ver la finca pero no editar recetas.',
+    admin_err_rate: 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.',
+    admin_err_unavailable: 'El inicio de sesión no está disponible ahora. Inténtalo más tarde.',
+    admin_err_password: 'Contraseña incorrecta.',
+    admin_logout_label: 'Cerrar sesión de administrador',
+    admin_login_label: 'Acceso de administrador',
+    admin_logged_in_title: 'Sesión de administrador iniciada',
   },
 } as const;
 

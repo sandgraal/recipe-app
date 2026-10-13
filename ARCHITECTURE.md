@@ -61,6 +61,7 @@ The `recipes` table is RLS-locked; reads are public (anon), writes require the s
 
 - `writeAllowed(req)` permits a write when either an httpOnly **session cookie** (set by `POST /api/auth/login`) or an `Authorization: Bearer <ADMIN_PASSWORD>` header is present.
 - **Default-deny in production:** if `ADMIN_PASSWORD` is unset, writes are denied on a real prod deploy (`VERCEL_ENV === 'production'`) but stay open in dev/preview so local work isn't blocked. `src/lib/runtime.ts` draws that prod/preview distinction (Vercel sets `NODE_ENV=production` for previews too, so `VERCEL_ENV` is the reliable signal).
+- **Finca account sign-in** (the default UI): the browser signs in with Supabase Auth and sends the access token to `POST /api/auth/login`, which verifies it, checks `public.finca_can_write(FINCA_ID)` as that user, and only then issues the same session cookie. `{ password }` on the same route is the fallback. See README "How editing sign-in works".
 - The session cookie is a signed token (`src/lib/adminSession.ts`), httpOnly so client JS can't read it — replacing an earlier scheme that mirrored the password into localStorage.
 
 Supporting guards on the same routes: **rate limiting** (`src/lib/rateLimit.ts` — Upstash Redis when configured, in-memory fallback otherwise), an **SSRF guard** on URL import (`src/lib/ssrf.ts`), request-body validation with Zod (`src/lib/schemas.ts`, `src/lib/requestBody.ts`), and a **CORS** lock to the site origin (`src/lib/cors.ts`).

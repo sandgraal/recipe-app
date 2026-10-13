@@ -21,7 +21,8 @@ Add these in the Vercel dashboard (Project → Settings → Environment Variable
 | `NEXT_PUBLIC_SUPABASE_URL` | Public — Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public — Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret.** Server-only; required for writes (the recipes table is RLS-locked). |
-| `ADMIN_PASSWORD` | **Secret.** Gates writes/imports/admin login. In production, writes **default-deny** until this is set. |
+| `ADMIN_PASSWORD` | **Secret.** Gates writes/imports/admin login and signs the admin session cookie (also required for the finca sign-in). In production, writes **default-deny** until this is set. |
+| `FINCA_ID` | Optional — finca whose editors/admins can sign in with their Finca Colibrí account (default `colibri`). |
 | `ANTHROPIC_API_KEY` | **Secret.** AI features. |
 | `NEXT_PUBLIC_SITE_URL` | Optional — canonical origin (defaults to the prod URL). |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Optional — shared-store rate limiting for public AI routes; falls back to an in-memory limiter if unset. |
@@ -48,7 +49,7 @@ Reading/browsing only needs the two public `NEXT_PUBLIC_SUPABASE_*` values. AI f
 - **Supabase project:** `recipe-book` (ref `cjnwvxtomwyszcfuvgpw`, us-east-1)
 - **Database:** `recipes` and `meal_groups` tables — schema in `supabase/migrations/`
 - **Storage bucket:** `recipe-images` (public read)
-- **Access control:** the recipes table is RLS-locked; reads are public, writes go through the service-role key and are gated by `ADMIN_PASSWORD` (admin cookie or `Authorization: Bearer <ADMIN_PASSWORD>`).
+- **Access control:** the recipes table is RLS-locked; reads are public, writes go through the service-role key and are gated by the admin cookie or `Authorization: Bearer <ADMIN_PASSWORD>`. The cookie is issued by `POST /api/auth/login` after either a finca account sign-in (Supabase Auth token verified server-side + `public.finca_can_write(FINCA_ID)` returns true) or the admin password. No Supabase Auth dashboard changes or redirect URLs are needed (email + password only, no OAuth/magic links); the shared `finca_can_write` function must exist and be executable by `authenticated`.
 
 ## Applying database migrations
 Migrations in `supabase/migrations/` are applied to the project via the Supabase CLI (`supabase db push`) or the dashboard SQL editor. They are idempotent (`if not exists` / `drop … if exists` guards) so re-running is safe.
