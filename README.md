@@ -101,7 +101,9 @@ Copy `.env.local.example` and fill in. `NEXT_PUBLIC_*` values are shipped to the
 | `SUPABASE_SERVICE_ROLE_KEY` | For writes | Server-only key; required for writes once the recipes-table RLS lock is applied. **Never** expose with a `NEXT_PUBLIC_` prefix. |
 | `ADMIN_PASSWORD` | For writes/AI-writes | Gates write/import/admin endpoints and admin login, and signs the admin session cookie (so it is also required for the finca sign-in). In production, writes **default-deny** until this is set. |
 | `FINCA_ID` | Optional | Finca whose editors/admins may sign in (default `colibri`). Passed to `public.finca_can_write(p_finca_id)`. |
-| `ANTHROPIC_API_KEY` | For AI features | Import, identify, chat, translate |
+| `ANTHROPIC_API_KEY` | For AI features | Import, identify, chat, translate, and the Cocina chat (same key, nothing new to set) |
+| `HUB_ORIGINS` | Optional | Comma-separated origins of the finca hub allowed to call `POST /api/cocina/chat` (only that route; other routes keep the site-origin CORS). Default `https://sandgraal.github.io,http://localhost:5173,http://localhost:4173` |
+| `COCINA_CHAT_MODEL` | Optional | Model for the Cocina chat (default `claude-haiku-5-5`) |
 | `NEXT_PUBLIC_SITE_URL` | Optional | Canonical origin for CORS, metadata, sitemap, JSON-LD (defaults to the prod URL) |
 | `UPSTASH_REDIS_REST_URL` | Optional | Shared-store rate limiting for public AI routes; falls back to an in-memory limiter if unset |
 | `UPSTASH_REDIS_REST_TOKEN` | Optional | Token for the above |
@@ -150,6 +152,7 @@ src/
       recipes, recipes/[id]                CRUD
       import/{url,text,photo}              AI import
       identify, recipe-chat, translate     AI features
+      cocina/chat                          Hub Cocina chat (SSE, finca editors)
       auth/{login,logout}                  Admin session
       admin/backfill-taxonomy             Maintenance
     layout.tsx, sitemap.ts, robots.ts, manifest.json
@@ -158,6 +161,7 @@ src/
     taxonomy, browse, recipes, search helpers
     scale, convert, time                 Quantities / units / time
     schemas, requestBody, ssrf, cors     Validation & safety
+    hubCors, cocinaChat                  Cocina chat: hub CORS, prompt, tool, schemas
     adminAuth, adminSession, rateLimit   Auth & throttling
     i18n, site, supabase, thumbhash*     Infra
     use*.ts                              Client hooks (favorites, cook-mode, …)

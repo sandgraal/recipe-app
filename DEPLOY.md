@@ -23,7 +23,9 @@ Add these in the Vercel dashboard (Project → Settings → Environment Variable
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret.** Server-only; required for writes (the recipes table is RLS-locked). |
 | `ADMIN_PASSWORD` | **Secret.** Gates writes/imports/admin login and signs the admin session cookie (also required for the finca sign-in). In production, writes **default-deny** until this is set. |
 | `FINCA_ID` | Optional — finca whose editors/admins can sign in with their Finca Colibrí account (default `colibri`). |
-| `ANTHROPIC_API_KEY` | **Secret.** AI features. |
+| `ANTHROPIC_API_KEY` | **Secret.** AI features, including the Cocina chat (reused; nothing new to set). |
+| `HUB_ORIGINS` | Optional — comma-separated origins of the finca hub allowed to call `POST /api/cocina/chat` (default `https://sandgraal.github.io,http://localhost:5173,http://localhost:4173`). Only that route reads it. |
+| `COCINA_CHAT_MODEL` | Optional — model for the Cocina chat (default `claude-haiku-5-5`). |
 | `NEXT_PUBLIC_SITE_URL` | Optional — canonical origin (defaults to the prod URL). |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Optional — shared-store rate limiting for public AI routes; falls back to an in-memory limiter if unset. |
 

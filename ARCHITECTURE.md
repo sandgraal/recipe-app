@@ -66,6 +66,18 @@ The `recipes` table is RLS-locked; reads are public (anon), writes require the s
 
 Supporting guards on the same routes: **rate limiting** (`src/lib/rateLimit.ts` — Upstash Redis when configured, in-memory fallback otherwise), an **SSRF guard** on URL import (`src/lib/ssrf.ts`), request-body validation with Zod (`src/lib/schemas.ts`, `src/lib/requestBody.ts`), and a **CORS** lock to the site origin (`src/lib/cors.ts`).
 
+## Cocina chat (`POST /api/cocina/chat`)
+
+Called from the finca hub (a static site on another origin) to chat about one Cocina recipe. Contract: `docs/umbrella/cocina-chat-api.md` in the Finca Colibrí repo.
+
+- **Auth:** `Authorization: Bearer <Supabase access token>`; the route verifies it, then calls `finca_can_write(FINCA_ID)` as that user (like `/api/auth/login`). Only finca admins and editors pass; it spends money. No cookie is issued.
+- **CORS:** its own allow-list from `HUB_ORIGINS` (`src/lib/hubCors.ts`); every other route keeps the site-origin lock in `cors.ts`.
+- **Limits:** a loose per-IP limit before auth and 20 requests / 5 min per user after; JSON body at most 64 KB (413), validated with Zod (`src/lib/cocinaChat.ts`).
+- **Model call:** `claude-haiku-5-5` (override with `COCINA_CHAT_MODEL`), no `thinking` (adaptive by default), `output_config.effort: 'low'`, `max_tokens` 4000, `client.messages.stream`. The system prompt (one stable variant per language, cacheable) says recipe text is data, not instructions; the formula and context are the first user turn inside `<finca_data>` JSON.
+- **Proposals:** the `propose_version` tool (`strict: true`, `tool_choice` auto). The model is told to write one or two sentences first and then call the tool. When the stream ends with that tool call, the route validates the input again, sends a `proposal` event and then `done`; there is **no tool_result follow-up request** (one request per turn, half the cost). If the model skipped the sentence, a fixed localized one is sent before the proposal.
+- **Events:** `delta` / `proposal` / `done` (`stopReason`, `usage`) / `error` (`refusal`, `max_tokens`, `upstream`). Refusals and `max_tokens` become `error` events; SDK errors are caught by class (`RateLimitError`, `APIConnectionError`, `APIError`, ...).
+- **Logs:** status, token usage, model and user id only; never recipe or message text.
+
 ## Internationalization
 
 UI strings live in one dictionary (`src/lib/i18n.ts`) keyed by a `TranslationKey` union, with `en` and `es` tables kept in lockstep (a coverage test guards against drift). Recipe *content* is bilingual per-row (`title` / `title_es`, `tags` / `tags_es`, translated steps/ingredients); a recipe missing Spanish can be translated on demand via `/api/translate`.

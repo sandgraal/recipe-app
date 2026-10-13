@@ -15,6 +15,8 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
   FINCA_ID: z.string().optional(),
+  HUB_ORIGINS: z.string().optional(),
+  COCINA_CHAT_MODEL: z.string().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
