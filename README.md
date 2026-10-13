@@ -2,6 +2,8 @@ A bilingual (English / Spanish) personal recipe collection focused on Costa Rica
 
 **Live:** https://recipe-app-blush-eta.vercel.app
 
+Part of the **Finca Colibrí** family (shop, recipes, cabins, finca hub): see the [family map](https://github.com/sandgraal/Finca-Colibri-Plan-Maestro-de-Siembra/blob/main/docs/umbrella/README.md).
+
 ---
 
 ## Features
