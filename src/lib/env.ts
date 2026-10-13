@@ -14,6 +14,7 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
+  FINCA_ID: z.string().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),

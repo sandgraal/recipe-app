@@ -99,11 +99,22 @@ Copy `.env.local.example` and fill in. `NEXT_PUBLIC_*` values are shipped to the
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL (public) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key (public) |
 | `SUPABASE_SERVICE_ROLE_KEY` | For writes | Server-only key; required for writes once the recipes-table RLS lock is applied. **Never** expose with a `NEXT_PUBLIC_` prefix. |
-| `ADMIN_PASSWORD` | For writes/AI-writes | Gates write/import/admin endpoints and admin login. In production, writes **default-deny** until this is set. |
+| `ADMIN_PASSWORD` | For writes/AI-writes | Gates write/import/admin endpoints and admin login, and signs the admin session cookie (so it is also required for the finca sign-in). In production, writes **default-deny** until this is set. |
+| `FINCA_ID` | Optional | Finca whose editors/admins may sign in (default `colibri`). Passed to `public.finca_can_write(p_finca_id)`. |
 | `ANTHROPIC_API_KEY` | For AI features | Import, identify, chat, translate |
 | `NEXT_PUBLIC_SITE_URL` | Optional | Canonical origin for CORS, metadata, sitemap, JSON-LD (defaults to the prod URL) |
 | `UPSTASH_REDIS_REST_URL` | Optional | Shared-store rate limiting for public AI routes; falls back to an in-memory limiter if unset |
 | `UPSTASH_REDIS_REST_TOKEN` | Optional | Token for the above |
+
+### How editing sign-in works
+
+One account across the family: the Finca Colibrí email + password (Supabase Auth users, sign-ups disabled) is the default way to unlock editing.
+
+1. The lock icon opens a sign-in form. The browser signs in with the anon client (`signInWithPassword`, no persisted session) and POSTs `{ accessToken }` to `/api/auth/login`.
+2. The route verifies the token with Supabase (`auth.getUser`), then calls `rpc('finca_can_write', { p_finca_id: FINCA_ID })` **as that user**. Only admins/editors of the finca pass; non-members, read-only roles and bad tokens get 403/401 and no cookie.
+3. On success it sets the same signed httpOnly admin cookie as before (the cookie is the only session; the browser then calls `signOut({ scope: 'local' })` so no Supabase tokens stay in localStorage). Logout clears the cookie.
+
+Fallbacks, unchanged: `POST /api/auth/login` with `{ password }` (the UI has a small "Use admin password" link), and `Authorization: Bearer <ADMIN_PASSWORD>` on write routes for automation such as the recipe publish skill.
 
 Env validation is intentionally lenient (`src/lib/env.ts`): it warns on missing/malformed values rather than crashing, so a misconfigured deploy still boots and individual features degrade gracefully.
 
