@@ -93,8 +93,8 @@ Proposing a changed recipe
 - label is a short name for the version (up to 40 characters); why is one line. Put a pH re-test reminder in why or notes when the change touches acids, sugars, salt, water or low-acid ingredients.`;
 
 const LANG_LINE: Record<'es' | 'en', string> = {
-  es: 'Answer in Spanish, using the informal "tú" voice. Keep the recipe text you propose in Spanish too.',
-  en: 'Answer in English. Keep the recipe text you propose in English too.',
+  es: 'Answer in Spanish, using the informal "tú" voice. Write any recipe you propose (propose_version) in the same language as the recipe in <finca_data>, so a saved version only changes what you meant to change; the label and why may be in Spanish.',
+  en: 'Answer in English. Write any recipe you propose (propose_version) in the same language as the recipe in <finca_data>, so a saved version only changes what you meant to change.',
 };
 
 export function systemPrompt(lang: 'es' | 'en'): string {
