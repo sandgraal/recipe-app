@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       // Admin-only / non-content routes shouldn't be crawled.
-      disallow: ['/api/', '/en/import', '/es/import', '/en/recipes/new', '/es/recipes/new'],
+      disallow: ['/api/', '/en/import', '/es/import', '/en/recipes/new', '/es/recipes/new', '/en/admin/', '/es/admin/'],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
