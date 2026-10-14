@@ -153,3 +153,6 @@ ${html}`, 'Could not parse recipe');
   if (galleryImages.length > 0) recipe.gallery_images = galleryImages;
   return json({ recipe });
 }
+
+// Haiku 5.5 thinks briefly before answering; a photo or page import can take longer than the default limit.
+export const maxDuration = 60;
