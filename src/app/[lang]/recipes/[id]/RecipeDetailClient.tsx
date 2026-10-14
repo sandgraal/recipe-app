@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, type TouchEvent as ReactTouchEvent } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef, type TouchEvent as ReactTouchEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,6 +17,7 @@ import { useUnitSystem } from '@/lib/useUnitSystem';
 import { thumbhashToDataUrl } from '@/lib/thumbhash';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { recordRecentlyViewed } from '@/lib/useRecentlyViewed';
+import { readStored, useStoredRaw, writeStored } from '@/lib/useStoredValue';
 import FavoriteButton from '@/components/FavoriteButton';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
 import HealthDisclaimer, { hasHealthTag } from '@/components/HealthDisclaimer';
@@ -393,6 +394,15 @@ function TranslateBanner({ recipeId, lang, onTranslated }: {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 
+function parseChecked(raw: string | null): Set<number> {
+  try {
+    const val = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(val) ? val.filter((n): n is number => typeof n === 'number') : []);
+  } catch {
+    return new Set();
+  }
+}
+
 export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGroups = [], ingredientLinkCandidates = [] }: { recipe: Recipe; lang: string; mealGroups?: MealGroup[]; ingredientLinkCandidates?: IngredientRecipeCandidate[] }) {
   const locale = lang as Locale;
   const id = initialRecipe.id;
@@ -411,20 +421,14 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   const [activeImg, setActiveImg] = useState(0);
   const [servings, setServings] = useState<number>(initialRecipe.servings || 1);
   const [origServings, setOrigServings] = useState<number>(initialRecipe.servings || 1);
-  const [checked, setChecked] = useState<Set<number>>(new Set());
+  // Ticked ingredients persist per device in localStorage (no account needed),
+  // mirroring how the meal shopping list does.
   const checkKey = `recipe-check:${id}`;
+  const storedChecks = useStoredRaw(checkKey);
+  const checked = useMemo(() => parseChecked(storedChecks), [storedChecks]);
 
   // Track this recipe as recently viewed (for the home "Recently viewed" row).
   useEffect(() => { recordRecentlyViewed(id); }, [id]);
-
-  // Restore ticked ingredients from a previous session (localStorage — no account
-  // needed), mirroring how the meal shopping list persists.
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(checkKey);
-      if (raw) setChecked(new Set(JSON.parse(raw) as number[]));
-    } catch { /* ignore */ }
-  }, [checkKey]);
 
   const loadRecipe = useCallback(() => {
     fetch(`/api/recipes/${id}`)
@@ -440,12 +444,10 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
   }, [id]);
 
   const toggleCheck = useCallback((i: number) => {
-    setChecked(prev => {
-      const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
-      try { localStorage.setItem(checkKey, JSON.stringify([...next])); } catch { /* ignore */ }
-      return next;
-    });
+    const next = parseChecked(readStored(checkKey));
+    if (next.has(i)) next.delete(i);
+    else next.add(i);
+    writeStored(checkKey, JSON.stringify([...next]));
   }, [checkKey]);
 
   async function handleDelete() {
@@ -750,7 +752,7 @@ export default function RecipeDetailClient({ recipe: initialRecipe, lang, mealGr
                 <p className="text-sm" style={{ color: 'var(--muted)' }}>{t(locale, 'recipe_no_ingredients')}</p>
               )}
               {checked.size > 0 && (
-                <button onClick={() => { setChecked(new Set()); try { localStorage.removeItem(checkKey); } catch { /* ignore */ } }}
+                <button onClick={() => writeStored(checkKey, null)}
                   className="mt-4 w-full py-2 text-xs border"
                   style={{ borderColor: 'var(--border)', color: 'var(--muted)', borderRadius: 'var(--radius-sm)' }}>
                   {t(locale, 'recipe_clear_checked', { n: checked.size })}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { notifyStoredChange, useClientSnapshot, useHydrated } from '@/lib/useStoredValue';
 import { ADMIN_UI_COOKIE } from '@/lib/authConstants';
 import { createLoginClient } from '@/lib/supabase';
 
@@ -36,13 +36,9 @@ export function getAdminHeaders(): Record<string, string> {
 }
 
 export function useAdmin() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setIsAdmin(hasUiCookie());
-    setLoaded(true);
-  }, []);
+  // The hint cookie is the source of truth; login/logout re-read it via notifyStoredChange().
+  const isAdmin = useClientSnapshot(hasUiCookie, false);
+  const loaded = useHydrated();
 
   /** Fallback: the shared admin password. */
   async function login(password: string): Promise<LoginResult> {
@@ -56,7 +52,7 @@ export function useAdmin() {
         const body = await res.json().catch(() => ({}));
         return { ok: false, reason: reasonFromResponse(res, body?.code) };
       }
-      setIsAdmin(true);
+      notifyStoredChange();
       return { ok: true };
     } catch {
       return { ok: false, reason: 'unavailable' };
@@ -93,7 +89,7 @@ export function useAdmin() {
         const body = await res.json().catch(() => ({}));
         return { ok: false, reason: reasonFromResponse(res, body?.code) };
       }
-      setIsAdmin(true);
+      notifyStoredChange();
       return { ok: true };
     } catch {
       return { ok: false, reason: 'unavailable' };
@@ -107,7 +103,7 @@ export function useAdmin() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch { /* ignore */ }
-    setIsAdmin(false);
+    notifyStoredChange();
   }
 
   return { isAdmin, loaded, login, loginWithAccount, logout };

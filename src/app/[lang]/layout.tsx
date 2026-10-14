@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Metadata } from 'next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import AdminButton from '@/components/AdminButton';
@@ -70,11 +71,12 @@ export default async function LangLayout({
               className="flex items-center gap-2.5"
               aria-label="Creaciones Colibrí Recipes"
             >
-              <img
+              <Image
                 src="https://sandgraal.github.io/creaciones-colibri/img/branding/creaciones-colibri-logo-small.png"
                 alt=""
                 width={32}
                 height={32}
+                unoptimized
                 decoding="async"
                 className="w-8 h-8 object-contain"
               />
@@ -117,12 +119,13 @@ export default async function LangLayout({
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-2">
-                <img
+                <Image
                   src="https://sandgraal.github.io/creaciones-colibri/img/branding/creaciones-colibri-logo-small.png"
                   alt=""
                   width={20}
                   height={20}
                   loading="lazy"
+                  unoptimized
                   decoding="async"
                   className="w-5 h-5 object-contain opacity-60"
                 />

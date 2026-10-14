@@ -200,7 +200,7 @@ export default function HomeClient({ recipes: initialRecipes, meals = [], lang }
   // Server-fetched catalog (props) — rendered into the initial HTML, no client
   // fetch on load. `recipes` holds the (optionally filtered) view.
   const allRecipes = initialRecipes;
-  const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
+  const [filtered, setFiltered] = useState<Recipe[]>(initialRecipes);
   const [search, setSearch] = useState('');
   const [cuisine, setCuisine] = useState('');
   const [activeTag, setActiveTag] = useState('');
@@ -211,6 +211,7 @@ export default function HomeClient({ recipes: initialRecipes, meals = [], lang }
   const recentIds = useRecentlyViewed();
 
   const isFiltering = !!(search || cuisine || activeTag);
+  const recipes = isFiltering ? filtered : allRecipes;
 
   // Browseable cuisine + tag lists, derived from the catalog. Drop the app-wide
   // "Costa Rican" tag (it's on nearly everything) and one-off noise (count < 2).
@@ -229,19 +230,23 @@ export default function HomeClient({ recipes: initialRecipes, meals = [], lang }
   }, [allRecipes]);
 
   useEffect(() => {
-    if (!isFiltering) { setRecipes(allRecipes); return; }
+    if (!isFiltering) return;
     const params = new URLSearchParams();
     if (search) params.set('q', search);
     if (cuisine) params.set('cuisine', cuisine);
     if (activeTag) params.set('tag', activeTag);
     fetch(`/api/recipes?${params}`)
       .then(r => r.json())
-      .then(d => setRecipes(d.recipes || []));
-  }, [search, cuisine, activeTag, isFiltering, allRecipes]);
+      .then(d => setFiltered(d.recipes || []));
+  }, [search, cuisine, activeTag, isFiltering]);
 
-  useEffect(() => {
+  // Leaving search/filter mode returns to the home sections (adjusted during
+  // render rather than in an effect, per React's guidance).
+  const [wasFiltering, setWasFiltering] = useState(isFiltering);
+  if (wasFiltering !== isFiltering) {
+    setWasFiltering(isFiltering);
     if (!isFiltering) setShowGrid(false);
-  }, [isFiltering]);
+  }
 
   // Only recipes with a photo are eligible for the curated first-load sections
   // (hero + rows). Photoless recipes stay fully reachable via search and the

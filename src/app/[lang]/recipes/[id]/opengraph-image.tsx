@@ -31,7 +31,6 @@ export default async function OgImage({ params }: { params: Promise<{ lang: stri
     (
       <div style={{ display: 'flex', width: '100%', height: '100%', position: 'relative', backgroundColor: '#17120f' }}>
         {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={cover}
             alt=""

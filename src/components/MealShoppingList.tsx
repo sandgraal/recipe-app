@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
+import { readStored, useStoredRaw, writeStored } from '@/lib/useStoredValue';
 import { t, type Locale } from '@/lib/i18n';
 import type { ShoppingAisle, ShoppingItem } from '@/lib/types';
 import { ShoppingCart, Check, Copy, Printer } from 'lucide-react';
@@ -12,27 +13,27 @@ interface Props {
   title: string;
 }
 
+function parseChecks(raw: string | null): Record<string, boolean> {
+  try {
+    const val = raw ? JSON.parse(raw) : {};
+    return val && typeof val === 'object' && !Array.isArray(val) ? val : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function MealShoppingList({ aisles, lang, slug, title }: Props) {
   const locale = lang as Locale;
   const es = locale === 'es';
   const storageKey = `meal-shop:${slug}`;
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  // Ticked items from a previous shopping trip are restored from localStorage (no account needed).
+  const storedChecks = useStoredRaw(storageKey);
+  const checked = useMemo<Record<string, boolean>>(() => parseChecks(storedChecks), [storedChecks]);
   const [copied, setCopied] = useState(false);
 
-  // Restore ticked items from a previous shopping trip (no account needed).
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) setChecked(JSON.parse(raw));
-    } catch { /* ignore */ }
-  }, [storageKey]);
-
   function toggle(key: string) {
-    setChecked(prev => {
-      const next = { ...prev, [key]: !prev[key] };
-      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
+    const prev = parseChecks(readStored(storageKey));
+    writeStored(storageKey, JSON.stringify({ ...prev, [key]: !prev[key] }));
   }
 
   const aisleName = (a: ShoppingAisle) => (es ? a.aisle_es || a.aisle : a.aisle);

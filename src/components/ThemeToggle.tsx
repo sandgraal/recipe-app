@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useHydrated, useStoredRaw, writeStored } from '@/lib/useStoredValue';
 import { Sun, Moon, Monitor, type LucideIcon } from 'lucide-react';
 
 type Theme = 'system' | 'light' | 'dark';
@@ -19,21 +20,15 @@ const LABEL_ES: Record<Theme, string> = { system: 'sistema', light: 'claro', dar
 /** Light / Dark / System theme toggle. Sets data-theme on <html> (matched by the
  *  inline script in the root layout) and persists the choice in localStorage. */
 export default function ThemeToggle({ lang = 'en' }: { lang?: string }) {
-  const [theme, setTheme] = useState<Theme>('system');
-  const [mounted, setMounted] = useState(false);
+  const stored = useStoredRaw('theme');
+  const theme: Theme = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+  const mounted = useHydrated();
+  const setTheme = (next: Theme) => writeStored('theme', next);
 
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const stored = localStorage.getItem('theme') as Theme | null;
-      if (stored === 'light' || stored === 'dark' || stored === 'system') setTheme(stored);
-    } catch { /* ignore */ }
-  }, []);
-
+  // Apply the chosen theme to <html> (the DOM is the external system here).
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.dataset.theme = resolve(theme);
-    try { localStorage.setItem('theme', theme); } catch { /* ignore */ }
   }, [theme, mounted]);
 
   // Follow OS changes live while on "system".

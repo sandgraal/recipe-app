@@ -1,16 +1,30 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Recipe } from '@/lib/types';
 import { t, localizeCategory, localizeIngredient, type Locale } from '@/lib/i18n';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';
+import { readStored, useStoredRaw, writeStored } from '@/lib/useStoredValue';
 
 // ─── Pantry data ────────────────────────────────────────────────────────────
 
 const PANTRY_KEY = 'colibri_pantry_v1';
+
+function parsePantry(raw: string | null): Set<string> {
+  try {
+    const val = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(val) ? val.filter((x): x is string => typeof x === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function savePantry(next: Set<string>) {
+  writeStored(PANTRY_KEY, JSON.stringify([...next]));
+}
 
 const INGREDIENT_CATEGORIES: Record<string, string[]> = {
   'Proteins': [
@@ -244,11 +258,11 @@ export default function IdentifyPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [pantry, setPantry] = useState<Set<string>>(new Set());
-  const [pantryLoaded, setPantryLoaded] = useState(false);
+  // The pantry persists per device in localStorage (no account needed).
+  const pantryRaw = useStoredRaw(PANTRY_KEY);
+  const pantry = useMemo(() => parsePantry(pantryRaw), [pantryRaw]);
 
   const [inputVal, setInputVal] = useState('');
-  const [autocomplete, setAutocomplete] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [focus, setFocus] = useState('');
 
@@ -269,33 +283,19 @@ export default function IdentifyPage() {
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(PANTRY_KEY);
-      if (raw) setPantry(new Set(JSON.parse(raw)));
-    } catch { /* ignore */ }
-    setPantryLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (!pantryLoaded) return;
-    localStorage.setItem(PANTRY_KEY, JSON.stringify([...pantry]));
-  }, [pantry, pantryLoaded]);
-
-  useEffect(() => {
     fetch('/api/recipes')
       .then(r => r.json())
       .then(d => { setRecipes(d.recipes || []); setRecipesLoaded(true); })
       .catch(() => setRecipesLoaded(true));
   }, []);
 
-  useEffect(() => {
+  const autocomplete = useMemo(() => {
     const q = inputVal.trim().toLowerCase();
-    if (q.length < 2) { setAutocomplete([]); return; }
-    const matches = ALL_INGREDIENTS
+    if (q.length < 2) return [];
+    return ALL_INGREDIENTS
       .filter(i => !pantry.has(i) &&
         (i.includes(q) || localizeIngredient(i, locale).toLowerCase().includes(q)))
       .slice(0, 8);
-    setAutocomplete(matches);
   }, [inputVal, pantry, locale]);
 
   const scored = recipes
@@ -318,17 +318,18 @@ export default function IdentifyPage() {
   const addIngredient = useCallback((item: string) => {
     const clean = item.trim().toLowerCase();
     if (!clean) return;
-    setPantry(p => new Set([...p, clean]));
+    savePantry(new Set([...parsePantry(readStored(PANTRY_KEY)), clean]));
     setInputVal('');
-    setAutocomplete([]);
   }, []);
 
   const removeIngredient = useCallback((item: string) => {
-    setPantry(p => { const n = new Set(p); n.delete(item); return n; });
+    const next = parsePantry(readStored(PANTRY_KEY));
+    next.delete(item);
+    savePantry(next);
     if (focus === item) setFocus('');
   }, [focus]);
 
-  const clearPantry = () => { setPantry(new Set()); setFocus(''); };
+  const clearPantry = () => { savePantry(new Set()); setFocus(''); };
 
   function handleScanFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];

@@ -1,16 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo } from 'react';
+import { readStored, useStoredRaw, writeStored } from '@/lib/useStoredValue';
 
 // Favorites live in localStorage (no account) as an ordered list of recipe ids,
-// most-recently-favorited first. A custom event keeps every mounted component
+// most-recently-favorited first. The shared store keeps every mounted component
 // (cards, detail, the home row) in sync, and the storage event syncs tabs.
 const KEY = 'colibri:favorites';
-const EVENT = 'colibri:favorites-changed';
 
-function read(): string[] {
+function parse(raw: string | null): string[] {
   try {
-    const raw = localStorage.getItem(KEY);
     const val = raw ? JSON.parse(raw) : [];
     return Array.isArray(val) ? val.filter((x): x is string => typeof x === 'string') : [];
   } catch {
@@ -19,25 +18,13 @@ function read(): string[] {
 }
 
 export function useFavorites() {
-  const [ids, setIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    setIds(read());
-    const sync = () => setIds(read());
-    window.addEventListener(EVENT, sync);
-    window.addEventListener('storage', sync);
-    return () => {
-      window.removeEventListener(EVENT, sync);
-      window.removeEventListener('storage', sync);
-    };
-  }, []);
+  const raw = useStoredRaw(KEY);
+  const ids = useMemo(() => parse(raw), [raw]);
 
   const toggle = useCallback((id: string) => {
-    const cur = read();
+    const cur = parse(readStored(KEY));
     const next = cur.includes(id) ? cur.filter(x => x !== id) : [id, ...cur];
-    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignore */ }
-    window.dispatchEvent(new CustomEvent(EVENT));
-    setIds(next);
+    writeStored(KEY, JSON.stringify(next));
   }, []);
 
   const isFavorite = useCallback((id: string) => ids.includes(id), [ids]);
