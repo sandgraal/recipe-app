@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getRecipeCardsFiltered } from '@/lib/recipes';
-import { parseFilter, isFilterActive } from '@/lib/browse';
-import { t, type Locale } from '@/lib/i18n';
+import { getRecipeCards, getRecipeCardsFiltered } from '@/lib/recipes';
+import { parseFilter, isFilterActive, sortRecipes } from '@/lib/browse';
+import { computeFacets, filterRecipes, activeFilters, queryWithout, type ActiveFilter } from '@/lib/facets';
+import {
+  t, localizeRecipeCategory, localizeRegion, localizeCuisine, localizeTag, localizeDifficulty, localizeDietary,
+  type Locale,
+} from '@/lib/i18n';
 import { SITE_URL } from '@/lib/site';
 import FilterRail from '@/components/FilterRail';
 import RecipeGrid from '@/components/RecipeGrid';
@@ -54,7 +58,38 @@ export default async function BrowsePage(
   const locale = lang as Locale;
 
   const filter = parseFilter(sp);
-  const all = await getRecipeCardsFiltered(filter);
+  // One read of the cards (or of the keyword matches when searching); the
+  // filters and the facet counts are then computed in memory, so the options
+  // always agree with the results and nothing extra is fetched.
+  const pool = filter.q
+    ? await getRecipeCardsFiltered({ q: filter.q, sort: 'relevance' })
+    : await getRecipeCards();
+  const all = sortRecipes(filterRecipes(pool, filter), filter.sort);
+  const facets = computeFacets(pool, filter, {
+    locale: lang,
+    label: (facet, value) =>
+      facet === 'category' ? localizeRecipeCategory(value, locale)
+        : facet === 'region' ? localizeRegion(value, locale)
+        : facet === 'diet' ? localizeDietary(value, locale)
+        : value,
+  });
+  const active = activeFilters(filter);
+  const activeName = (a: ActiveFilter): string => {
+    switch (a.kind) {
+      case 'category': return localizeRecipeCategory(a.value, locale);
+      case 'region': return localizeRegion(a.value, locale);
+      case 'cuisine': return localizeCuisine(a.value, locale);
+      case 'tag': return localizeTag(a.value, locale);
+      case 'difficulty': return localizeDifficulty(a.value, locale);
+      case 'diet': return localizeDietary(a.value, locale);
+      case 'max': return t(locale, 'facet_upto', { n: a.value });
+      default: return `“${a.value}”`;
+    }
+  };
+  const removeHref = (a: ActiveFilter) => {
+    const qs = queryWithout(sp, { key: a.key, value: a.kind === 'diet' ? a.value : undefined });
+    return `/${lang}/browse${qs ? `?${qs}` : ''}`;
+  };
 
   const show = Math.max(PAGE_SIZE, Number(Array.isArray(sp.show) ? sp.show[0] : sp.show) || PAGE_SIZE);
   const visible = all.slice(0, show);
@@ -76,13 +111,53 @@ export default async function BrowsePage(
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
-        <FilterRail lang={lang} />
+        <FilterRail lang={lang} facets={facets} />
 
         <div>
+          {active.length > 0 && (
+            <ul className="flex flex-wrap gap-2 mb-6" aria-label={t(locale, 'browse_active_filters')}>
+              {active.map(a => (
+                <li key={`${a.key}:${a.value}`}>
+                  <Link
+                    href={removeHref(a)}
+                    scroll={false}
+                    className="chip inline-flex items-center gap-1"
+                    aria-label={t(locale, 'browse_remove_filter', { name: activeName(a) })}
+                  >
+                    {activeName(a)} <span aria-hidden="true">×</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
           {visible.length === 0 ? (
             <div className="rounded-2xl border p-10 text-center" style={{ borderColor: 'var(--border)', background: 'var(--card)' }}>
               <p className="text-base" style={{ color: 'var(--text)' }}>{t(locale, 'browse_none')}</p>
               <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{t(locale, 'browse_none_hint')}</p>
+              {active.length > 0 && (
+                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  {active.map(a => (
+                    <Link
+                      key={`${a.key}:${a.value}`}
+                      href={removeHref(a)}
+                      scroll={false}
+                      className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium border"
+                      style={{ borderColor: 'var(--secondary)', color: 'var(--secondary)', background: 'var(--card)' }}
+                    >
+                      {t(locale, 'browse_remove_filter', { name: activeName(a) })}
+                    </Link>
+                  ))}
+                  {active.length > 1 && (
+                    <Link
+                      href={`/${lang}/browse`}
+                      className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-white"
+                      style={{ background: 'var(--accent)' }}
+                    >
+                      {t(locale, 'browse_remove_all')}
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <>
