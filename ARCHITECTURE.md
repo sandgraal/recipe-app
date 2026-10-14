@@ -66,6 +66,26 @@ The `recipes` table is RLS-locked; reads are public (anon), writes require the s
 
 Supporting guards on the same routes: **rate limiting** (`src/lib/rateLimit.ts` — Upstash Redis when configured, in-memory fallback otherwise), an **SSRF guard** on URL import (`src/lib/ssrf.ts`), request-body validation with Zod (`src/lib/schemas.ts`, `src/lib/requestBody.ts`), and a **CORS** lock to the site origin (`src/lib/cors.ts`).
 
+## AI calls
+
+Every AI route runs on **Claude Haiku 5.5** (`claude-haiku-5-5`, exact id, never a dated one). The model is one constant in `src/lib/ai.ts` (`aiModel()`), overridable with `AI_MODEL`; the Cocina chat also honours its own `COCINA_CHAT_MODEL`, which wins for that route. `src/lib/aiModels.test.ts` fails if a route hard-codes another id or sends a field Haiku 5.5 rejects.
+
+| Route / module | Effort | `max_tokens` | Notes |
+|---|---|---|---|
+| `POST /api/import/text`, `/photo`, `/url` (shared `lib/importRecipe.ts`) | `medium` | 8000 | structured output (`RECIPE_SCHEMA`); photo sends the image as base64 |
+| `POST /api/identify` (photo step, suggestions step) | `medium` | 8000 each | structured output; a refused or cut-off suggestions step still returns the ingredients |
+| `POST /api/recipe-chat` | `low` | 1500 | plain text; `lang` from the form picks the language of problem messages |
+| `lib/translate.ts` (`/api/translate`, auto-translate on create) | `low` | 16000 | structured output; any problem gives `null` (left untranslated) |
+| `POST /api/cocina/chat` | `low` | 4000 | streamed, see below |
+
+How the calls follow Haiku 5.5's rules (`src/lib/ai.ts`, `src/lib/aiSchemas.ts`):
+
+- **No** `thinking` param (adaptive thinking is on by default and its tokens count as output, so ceilings are generous; the newer tokenizer also counts about 30% more tokens), no `budget_tokens`, no sampling params, no assistant prefill, no forced `tool_choice`.
+- **JSON comes from `output_config.format`** (a JSON Schema per route), not from "return ONLY JSON" plus a regex. `parseJsonObject` still tolerates a fenced or prose-wrapped object in case the format is not applied.
+- **Text is picked by block type** (`textOf`), never `content[0]`: the reply may start with a `thinking` block.
+- **`readOutcome(message)`** classifies a finished message: `ok`, `refusal` (with `stop_details.category`), `max_tokens` (partial text, never parsed as complete) or `empty`. Imports and identify answer a problem with a 422 and a message in both languages (`problemText`); recipe-chat answers in the form's language; translate returns `null`. Haiku 5.5 has no server-side refusal fallback, so there is none here.
+- The large calls use `client.messages.stream(...).finalMessage()` (`runMessage`) to avoid HTTP timeouts; the Cocina chat streams to the hub.
+
 ## Cocina chat (`POST /api/cocina/chat`)
 
 Called from the finca hub (a static site on another origin) to chat about one Cocina recipe. Contract: `docs/umbrella/cocina-chat-api.md` in the Finca Colibrí repo.
@@ -73,7 +93,7 @@ Called from the finca hub (a static site on another origin) to chat about one Co
 - **Auth:** `Authorization: Bearer <Supabase access token>`; the route verifies it, then calls `finca_can_write(FINCA_ID)` as that user (like `/api/auth/login`). Only finca admins and editors pass; it spends money. No cookie is issued.
 - **CORS:** its own allow-list from `HUB_ORIGINS` (`src/lib/hubCors.ts`); every other route keeps the site-origin lock in `cors.ts`.
 - **Limits:** a loose per-IP limit before auth and 20 requests / 5 min per user after; JSON body at most 64 KB (413), validated with Zod (`src/lib/cocinaChat.ts`).
-- **Model call:** `claude-haiku-5-5` (override with `COCINA_CHAT_MODEL`), no `thinking` (adaptive by default), `output_config.effort: 'low'`, `max_tokens` 4000, `client.messages.stream`. The system prompt (one stable variant per language, cacheable) says recipe text is data, not instructions; the formula and context are the first user turn inside `<finca_data>` JSON.
+- **Model call:** `claude-haiku-5-5` (`AI_MODEL`, or `COCINA_CHAT_MODEL` for this route only), no `thinking` (adaptive by default), `output_config.effort: 'low'`, `max_tokens` 4000, `client.messages.stream`. The system prompt (one stable variant per language, cacheable) says recipe text is data, not instructions; the formula and context are the first user turn inside `<finca_data>` JSON.
 - **Proposals:** the `propose_version` tool (`strict: true`, `tool_choice` auto). The model is told to write one or two sentences first and then call the tool. When the stream ends with that tool call, the route validates the input again, sends a `proposal` event and then `done`; there is **no tool_result follow-up request** (one request per turn, half the cost). If the model skipped the sentence, a fixed localized one is sent before the proposal.
 - **Events:** `delta` / `proposal` / `done` (`stopReason`, `usage`) / `error` (`refusal`, `max_tokens`, `upstream`). Refusals and `max_tokens` become `error` events; SDK errors are caught by class (`RateLimitError`, `APIConnectionError`, `APIError`, ...).
 - **Logs:** status, token usage, model and user id only; never recipe or message text.
@@ -98,6 +118,7 @@ UI strings live in one dictionary (`src/lib/i18n.ts`) keyed by a `TranslationKey
 | Taxonomy / vocab | `src/lib/taxonomy.ts` |
 | Browse/filter/sort | `src/lib/browse.ts` |
 | Quantities / units / time | `src/lib/scale.ts`, `src/lib/convert.ts`, `src/lib/time.ts` |
+| AI calls (model, outcomes, schemas) | `src/lib/ai.ts`, `src/lib/aiSchemas.ts`, `src/lib/importRecipe.ts` |
 | Auth / safety | `src/lib/adminAuth.ts`, `src/lib/adminSession.ts`, `src/lib/rateLimit.ts`, `src/lib/ssrf.ts`, `src/lib/cors.ts`, `src/lib/schemas.ts` |
 | i18n | `src/lib/i18n.ts` |
 | Client hooks | `src/lib/use*.ts` |

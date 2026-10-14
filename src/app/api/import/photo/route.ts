@@ -4,6 +4,7 @@ import { getSupabase } from '@/lib/supabase';
 import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { extractRecipe } from '@/lib/importRecipe';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -44,48 +45,20 @@ export async function POST(req: NextRequest) {
     imageUrl = data.publicUrl;
   }
 
-  const message = await client.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 2048,
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: mediaType, data: base64 },
-        },
-        {
-          type: 'text',
-          text: `This is a photo of a recipe card or recipe page. Extract the complete recipe and return ONLY a JSON object with these exact fields (no markdown, no explanation):
-{
-  "title": string,
-  "description": string or null,
-  "servings": number or null,
-  "total_time": string or null,
-  "cuisine": string or null,
-  "tags": string[],
-  "ingredients": [{"amount": string, "unit": string, "item": string, "notes": string or null}],
-  "steps": [{"order": number, "text": string}],
-  "notes": string or null
-}`,
-        },
-      ],
-    }],
-  });
+  const result = await extractRecipe(client, 'import/photo', [
+    { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+    {
+      type: 'text',
+      text: 'This is a photo of a recipe card or recipe page. Extract the complete recipe, reading every ingredient and step. Use null for anything the photo does not show. "order" counts the steps from 1.',
+    },
+  ], 'Could not parse recipe from image');
+  if (!result.ok) return json({ error: result.error }, { status: result.status });
 
-  const raw = (message.content[0] as { type: string; text: string }).text.trim();
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return json({ error: 'Could not parse recipe from image' }, { status: 422 });
-
-  try {
-    const recipe = JSON.parse(jsonMatch[0]);
-    recipe.source_type = 'photo';
-    recipe.tags = recipe.tags || [];
-    recipe.ingredients = recipe.ingredients || [];
-    recipe.steps = recipe.steps || [];
-    if (imageUrl) recipe.image_url = imageUrl;
-    return json({ recipe });
-  } catch {
-    return json({ error: 'Invalid recipe JSON' }, { status: 422 });
-  }
+  const recipe = result.recipe;
+  recipe.source_type = 'photo';
+  if (imageUrl) recipe.image_url = imageUrl;
+  return json({ recipe });
 }
+
+// Haiku 5.5 thinks briefly before answering; a photo or page import can take longer than the default limit.
+export const maxDuration = 60;

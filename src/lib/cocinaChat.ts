@@ -8,7 +8,6 @@ import type Anthropic from '@anthropic-ai/sdk';
  */
 
 export const MAX_BODY_BYTES = 64 * 1024;
-export const DEFAULT_COCINA_MODEL = 'claude-haiku-5-5';
 
 const short = (max: number) => z.string().max(max);
 const optShort = (max: number) => z.string().max(max).optional();

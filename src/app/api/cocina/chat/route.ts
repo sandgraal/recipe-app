@@ -5,8 +5,8 @@ import { hubCorsHeaders } from '@/lib/hubCors';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { readJsonBody } from '@/lib/requestBody';
 import { logger } from '@/lib/logger';
+import { aiModel } from '@/lib/ai';
 import {
-  DEFAULT_COCINA_MODEL,
   ERROR_TEXT,
   MAX_BODY_BYTES,
   PROPOSAL_FALLBACK_TEXT,
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
   }
   const body = parsed.data;
 
-  const model = process.env.COCINA_CHAT_MODEL || DEFAULT_COCINA_MODEL;
+  const model = process.env.COCINA_CHAT_MODEL || aiModel();
   const client = new Anthropic({ maxRetries: 1, timeout: 55_000 });
   const enc = new TextEncoder();
   const abort = new AbortController();
