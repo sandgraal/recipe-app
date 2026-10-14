@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { t, type Locale } from '@/lib/i18n';
 import { getAdminHeaders } from '@/lib/useAdmin';
+import { deleteMeal } from '@/lib/mealsClient';
 
 interface Props {
   mealId: string;
@@ -28,19 +29,13 @@ export default function MealDeleteDialog({ mealId, title, lang, onClose, onDelet
   async function handleDelete() {
     setDeleting(true);
     setError('');
-    try {
-      const res = await fetch(`/api/meals/${mealId}`, { method: 'DELETE', cache: 'no-store', headers: { ...getAdminHeaders() } });
-      if (!res.ok) {
-        setDeleting(false);
-        setError(t(locale, res.status === 401 ? 'meal_save_unauthorized' : 'meal_delete_failed'));
-        return;
-      }
-      onDeleted();
-    } catch (e) {
-      console.error('meal delete request failed', e);
+    const result = await deleteMeal(mealId, getAdminHeaders());
+    if (!result.ok) {
       setDeleting(false);
-      setError(t(locale, 'meal_delete_failed_conn'));
+      setError(t(locale, result.errorKey));
+      return;
     }
+    onDeleted();
   }
 
   return (

@@ -6,7 +6,7 @@ import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import { t, type Locale } from '@/lib/i18n';
 import { getAdminHeaders } from '@/lib/useAdmin';
 import { normalizeName } from '@/lib/shoppingList';
-import { isValidSlug } from '@/lib/meals';
+import { saveMeal, validateMealDraft, type MealDraft } from '@/lib/mealsClient';
 
 export interface MealFormInitial {
   id: string;
@@ -89,38 +89,20 @@ export default function MealForm({ lang, initial, onClose }: Props) {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (!title.trim()) { setError(t(locale, 'meal_need_title')); return; }
-    if (!ids.length) { setError(t(locale, 'meal_need_recipe')); return; }
-    const cleanSlug = slug.trim();
-    if (cleanSlug && !isValidSlug(cleanSlug)) { setError(t(locale, 'meal_field_slug_hint')); return; }
+    const draft: MealDraft = { title, title_es: titleEs, note, note_es: noteEs, slug, recipeIds: ids };
+    const invalid = validateMealDraft(draft);
+    if (invalid) { setError(t(locale, invalid)); return; }
 
     setSaving(true);
-    const body: Record<string, unknown> = {
-      title: title.trim(), title_es: titleEs, note, note_es: noteEs, recipe_ids: ids,
-    };
-    if (cleanSlug) body.slug = cleanSlug;
-    try {
-      const res = await fetch(editing ? `/api/meals/${initial!.id}` : '/api/meals', {
-        method: editing ? 'PUT' : 'POST',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        setSaving(false);
-        setError(t(locale, res.status === 409 ? 'meal_slug_taken' : res.status === 401 ? 'meal_save_unauthorized' : 'meal_save_failed'));
-        return;
-      }
-      const { meal } = await res.json() as { meal?: { slug?: string } };
-      const newSlug = meal?.slug || cleanSlug;
-      onClose();
-      if (newSlug && (!editing || newSlug !== initial!.slug)) router.replace(`/${lang}/meals/${newSlug}`);
-      router.refresh();
-    } catch (err) {
-      console.error('meal save failed', err);
+    const result = await saveMeal(draft, editing ? initial!.id : undefined, getAdminHeaders());
+    if (!result.ok) {
       setSaving(false);
-      setError(t(locale, 'meal_save_failed_conn'));
+      setError(t(locale, result.errorKey));
+      return;
     }
+    onClose();
+    if (result.slug && (!editing || result.slug !== initial!.slug)) router.replace(`/${lang}/meals/${result.slug}`);
+    router.refresh();
   }
 
   const inputStyle = { background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 'var(--radius-sm)' } as const;
