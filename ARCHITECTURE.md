@@ -55,6 +55,8 @@ Search is **keyword-only by design** — no embeddings / semantic search. At thi
 
 The `derive*` helpers (`deriveCategory`, `deriveRegion`, `deriveDietary`, `deriveDifficulty`) infer structured fields from a recipe's tags/cuisine/steps, and `buildTaxonomyPatch` assembles the column updates — used by import and the `/api/admin/backfill-taxonomy` maintenance route. Spanish labels for every vocabulary term live alongside the vocab as lowercased-key maps.
 
+**Reading side is data-driven.** The lists above are the vocabulary for *editing* (recipe form, AI import). Browse filters, the `/category` and `/region` pages and the sitemap never use them: `src/lib/facets.ts` derives options and counts from the recipes that exist (an option with no recipes does not appear; counts are recomputed against the other active filters). `generateStaticParams` builds only non-empty category/region pages. A valid but empty category/region URL renders a friendly `noindex` page linking to non-empty neighbours; an unknown slug is a 404. Old `?region=Caribbean`-style links show an empty state with a "Remove filter" button per active filter.
+
 ## Auth & writes
 
 The `recipes` table is RLS-locked; reads are public (anon), writes require the service-role client **and** pass the app-level gate in `src/lib/adminAuth.ts`:

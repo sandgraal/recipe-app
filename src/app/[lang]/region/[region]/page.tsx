@@ -1,30 +1,43 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getRecipeCardsFiltered } from '@/lib/recipes';
+import { getRecipeCards } from '@/lib/recipes';
 import { regionFromSlug, slugify } from '@/lib/browse';
-import { SUGGESTED_REGIONS } from '@/lib/taxonomy';
-import { t, localizeRegion, LOCALES, type Locale } from '@/lib/i18n';
+import { filterRecipes, landingOptions, findBySlug } from '@/lib/facets';
+import { t, localizeRegion, localizeRecipeCategory, LOCALES, type Locale } from '@/lib/i18n';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 import RecipeGrid from '@/components/RecipeGrid';
+import EmptyLanding from '@/components/EmptyLanding';
+
+// Region is free text: a slug resolves against the regions in the data first,
+// then the seed list (so a known-but-empty region still gets a friendly page).
+function resolveRegion(slug: string, inData: ReturnType<typeof landingOptions>['regions']): { name: string; empty: boolean } | null {
+  const hit = findBySlug(inData, slug);
+  if (hit) return { name: hit.value, empty: false };
+  const seed = regionFromSlug(slug);
+  return seed ? { name: seed, empty: true } : null;
+}
 
 export const revalidate = 3600;
 
-export function generateStaticParams() {
-  return LOCALES.flatMap(lang => SUGGESTED_REGIONS.map(r => ({ lang, region: slugify(r) })));
+// Only regions that have recipes are built ahead of time.
+export async function generateStaticParams() {
+  const { regions } = landingOptions(await getRecipeCards());
+  return LOCALES.flatMap(lang => regions.map(r => ({ lang, region: slugify(r.value) })));
 }
 
 export async function generateMetadata(
   { params }: { params: Promise<{ lang: string; region: string }> },
 ): Promise<Metadata> {
   const { lang, region: slug } = await params;
-  const region = regionFromSlug(slug);
-  if (!region) return {};
+  const resolved = resolveRegion(slug, landingOptions(await getRecipeCards()).regions);
+  if (!resolved) return {};
   const locale = lang as Locale;
-  const name = localizeRegion(region, locale);
+  const name = localizeRegion(resolved.name, locale);
   const title = `${name} · ${SITE_NAME}`;
   return {
     title,
+    robots: resolved.empty ? { index: false, follow: true } : undefined,
     alternates: {
       canonical: `${SITE_URL}/${lang}/region/${slug}`,
       languages: {
@@ -41,12 +54,27 @@ export default async function RegionPage(
   { params }: { params: Promise<{ lang: string; region: string }> },
 ) {
   const { lang, region: slug } = await params;
-  const region = regionFromSlug(slug);
-  if (!region) notFound();
+  const all = await getRecipeCards();
+  const landing = landingOptions(all, { locale: lang });
+  const resolved = resolveRegion(slug, landing.regions);
+  if (!resolved) notFound();
   const locale = lang as Locale;
+  const region = resolved.name;
 
-  const recipes = await getRecipeCardsFiltered({ region, sort: 'newest' });
+  const recipes = filterRecipes(all, { region });
   const name = localizeRegion(region, locale);
+  if (recipes.length === 0) {
+    return (
+      <EmptyLanding
+        lang={lang}
+        title={t(locale, 'empty_region_title', { name })}
+        related={[
+          ...landing.regions.map(r => ({ href: `/${lang}/region/${slugify(r.value)}`, label: localizeRegion(r.value, locale), count: r.count })),
+          ...landing.categories.slice(0, 4).map(c => ({ href: `/${lang}/category/${slugify(c.value)}`, label: localizeRecipeCategory(c.value, locale), count: c.count })),
+        ]}
+      />
+    );
+  }
   const count = recipes.length;
   const countLabel = count === 1
     ? t(locale, 'browse_count_one', { n: count })
