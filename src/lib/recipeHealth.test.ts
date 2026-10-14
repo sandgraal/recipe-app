@@ -57,6 +57,23 @@ describe('recipeIssues', () => {
     expect(recipeIssues({ ...healthy, dietary: [] })).toEqual(['no_dietary']);
   });
 
+  it('flags a dietary label that contradicts the ingredients', () => {
+    const butter = { amount: '1', unit: 'tbsp', item: 'butter' };
+    expect(recipeIssues({ ...healthy, dietary: ['vegan'], ingredients: [...ing(4), butter] })).toEqual(['dietary_conflict']);
+    expect(recipeIssues({ ...healthy, dietary: ['vegetarian'], ingredients: [...ing(4), butter] })).toEqual([]);
+    expect(recipeIssues({ ...healthy, dietary: ['vegan'], ingredients: [...ing(4), { item: 'coconut milk' }] })).toEqual([]);
+  });
+
+  it('also reads the Spanish ingredient lines', () => {
+    const r: HealthRecipe = { ...healthy, dietary: ['vegetarian'], ingredients_es: [{ item: 'caldo de pollo' }] };
+    expect(recipeIssues(r)).toEqual(['dietary_conflict']);
+  });
+
+  it('classifyRecipes says which ingredient conflicts', () => {
+    const [row] = classifyRecipes([{ ...healthy, dietary: ['vegan'], ingredients: [...ing(4), { item: 'honey' }] }]);
+    expect(row.conflicts).toEqual([{ label: 'vegan', ingredient: 'honey' }]);
+  });
+
   it('flags very short ingredient lists (2 or fewer), not 3', () => {
     expect(recipeIssues({ ...healthy, ingredients: ing(2) })).toEqual(['short_ingredients']);
     expect(recipeIssues({ ...healthy, ingredients: [] })).toEqual(['short_ingredients']);

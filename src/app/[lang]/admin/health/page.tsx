@@ -4,14 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabase } from '@/lib/supabase';
-import { t, type Locale, type TranslationKey } from '@/lib/i18n';
+import { t, localizeDietary, type Locale, type TranslationKey } from '@/lib/i18n';
 import { getAdminHeaders, useAdmin } from '@/lib/useAdmin';
 import {
   classifyMeals, classifyRecipes, countByIssue, RECIPE_ISSUES,
   type HealthMeal, type HealthRecipe, type MealHealthRow, type RecipeHealthRow, type RecipeIssue,
 } from '@/lib/recipeHealth';
 
-const RECIPE_COLUMNS = 'id,title,title_es,image_url,total_time,region,category,dietary,ingredients,steps,steps_es';
+const RECIPE_COLUMNS = 'id,title,title_es,image_url,total_time,region,category,dietary,ingredients,ingredients_es,steps,steps_es';
 const PAGE = 1000; // PostgREST returns at most 1000 rows per request
 
 type Data = { recipes: HealthRecipe[]; meals: HealthMeal[] };
@@ -40,6 +40,7 @@ const ISSUE_KEY: Record<RecipeIssue, TranslationKey> = {
   no_region: 'health_issue_no_region',
   no_category: 'health_issue_no_category',
   no_dietary: 'health_issue_no_dietary',
+  dietary_conflict: 'health_issue_dietary_conflict',
   short_ingredients: 'health_issue_short_ingredients',
 };
 
@@ -165,6 +166,15 @@ export default function RecipeHealthPage() {
                           style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--text)' }}>
                           {copy[r.id] === 'busy' ? t(locale, 'health_copying') : t(locale, 'health_copy_photo')}
                         </button>
+                      )}
+                      {r.conflicts.length > 0 && (
+                        <ul className="basis-full text-xs space-y-0.5" style={{ color: 'var(--muted)' }}>
+                          {r.conflicts.map(c => (
+                            <li key={`${c.label}|${c.ingredient}`} className="break-words">
+                              {t(locale, 'health_conflict_detail', { label: localizeDietary(c.label, locale), item: c.ingredient })}
+                            </li>
+                          ))}
+                        </ul>
                       )}
                       {copy[r.id] === 'failed' && (
                         <span className="basis-full text-xs" role="alert" style={{ color: '#e05252' }}>{t(locale, 'health_copy_failed')}</span>

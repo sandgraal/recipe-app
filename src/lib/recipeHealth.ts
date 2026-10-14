@@ -5,6 +5,7 @@
  */
 import { isExternalImageUrl } from '@/lib/imageHost';
 import { timeNeedsSpanish } from '@/lib/i18n';
+import { dietaryConflicts, type DietaryConflict } from '@/lib/dietaryConflicts';
 
 /** A recipe with this many ingredients or fewer counts as "very short". */
 export const SHORT_INGREDIENT_MAX = 2;
@@ -20,10 +21,11 @@ export type RecipeIssue =
   | 'no_region'
   | 'no_category'
   | 'no_dietary'
+  | 'dietary_conflict'
   | 'short_ingredients';
 
 export const RECIPE_ISSUES: RecipeIssue[] = [
-  'no_cover', 'external_photo', 'no_title_es', 'no_time_es', 'no_steps_es', 'no_region', 'no_category', 'no_dietary', 'short_ingredients',
+  'no_cover', 'external_photo', 'no_title_es', 'no_time_es', 'no_steps_es', 'no_region', 'no_category', 'no_dietary', 'dietary_conflict', 'short_ingredients',
 ];
 
 export type MealIssue = 'few_recipes' | 'missing_recipes';
@@ -39,6 +41,7 @@ export interface HealthRecipe {
   category?: string | null;
   dietary?: string[] | null;
   ingredients?: unknown[] | null;
+  ingredients_es?: unknown[] | null;
   steps?: unknown[] | null;
   steps_es?: unknown[] | null;
 }
@@ -57,6 +60,8 @@ export interface RecipeHealthRow {
   title: string;
   title_es?: string | null;
   issues: RecipeIssue[];
+  /** Dietary labels that contradict an ingredient line (empty unless `dietary_conflict` is an issue). */
+  conflicts: DietaryConflict[];
 }
 
 export interface MealHealthRow {
@@ -73,6 +78,11 @@ export interface MealHealthRow {
 const blank = (s: string | null | undefined) => !s || !s.trim();
 const emptyList = (a: unknown[] | null | undefined) => !Array.isArray(a) || a.length === 0;
 
+/** Dietary labels that contradict the ingredients (English and Spanish lines both checked). */
+export function recipeConflicts(r: HealthRecipe): DietaryConflict[] {
+  return dietaryConflicts(r.dietary, [...(r.ingredients ?? []), ...(r.ingredients_es ?? [])]);
+}
+
 /** Problems with one recipe, in a stable order (empty = healthy). */
 export function recipeIssues(r: HealthRecipe): RecipeIssue[] {
   const out: RecipeIssue[] = [];
@@ -86,6 +96,7 @@ export function recipeIssues(r: HealthRecipe): RecipeIssue[] {
   if (blank(r.region)) out.push('no_region');
   if (blank(r.category)) out.push('no_category');
   if (emptyList(r.dietary)) out.push('no_dietary');
+  if (recipeConflicts(r).length > 0) out.push('dietary_conflict');
   if (!Array.isArray(r.ingredients) || r.ingredients.length <= SHORT_INGREDIENT_MAX) out.push('short_ingredients');
   return out;
 }
@@ -93,7 +104,13 @@ export function recipeIssues(r: HealthRecipe): RecipeIssue[] {
 /** Only the recipes that have at least one issue, sorted by title. */
 export function classifyRecipes(recipes: HealthRecipe[]): RecipeHealthRow[] {
   return recipes
-    .map(r => ({ id: r.id, title: r.title, title_es: r.title_es ?? null, issues: recipeIssues(r) }))
+    .map(r => {
+      const issues = recipeIssues(r);
+      return {
+        id: r.id, title: r.title, title_es: r.title_es ?? null, issues,
+        conflicts: issues.includes('dietary_conflict') ? recipeConflicts(r) : [],
+      };
+    })
     .filter(r => r.issues.length > 0)
     .sort((a, b) => a.title.localeCompare(b.title));
 }
