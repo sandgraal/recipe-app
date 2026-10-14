@@ -137,17 +137,17 @@ export async function getAllMeals(): Promise<MealSummary[]> {
   if (!c) return [];
   const { data, error } = await c
     .from('meal_groups')
-    .select('slug,title,title_es,recipe_ids,created_at')
+    .select('id,slug,title,title_es,recipe_ids,created_at')
     .not('slug', 'is', null)
     .order('created_at', { ascending: true });
   if (error || !data?.length) return [];
-  const groups = data as Array<{ slug: string; title: string; title_es: string | null; recipe_ids: string[] }>;
+  const groups = data as Array<{ id: string; slug: string; title: string; title_es: string | null; recipe_ids: string[] }>;
   const allIds = [...new Set(groups.flatMap(g => (Array.isArray(g.recipe_ids) ? g.recipe_ids : [])))];
   const { data: recs } = await c.from('recipes').select('id,title,title_es,image_url').in('id', allIds);
   const byId = new Map((recs as MealGroupSibling[] | null ?? []).map(r => [r.id, r]));
   return groups
     .map(g => ({
-      slug: g.slug, title: g.title, title_es: g.title_es,
+      id: g.id, slug: g.slug, title: g.title, title_es: g.title_es,
       recipes: (g.recipe_ids || []).map(id => byId.get(id)).filter((r): r is MealGroupSibling => !!r),
     }))
     .filter(m => m.recipes.length > 0);

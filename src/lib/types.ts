@@ -93,6 +93,7 @@ export interface ShoppingAisle {
 /** A lightweight meal for listings/cards: slug, title, and member recipes
  *  (for the collage thumbnail). */
 export interface MealSummary {
+  id?: string;
   slug: string;
   title: string;
   title_es?: string | null;

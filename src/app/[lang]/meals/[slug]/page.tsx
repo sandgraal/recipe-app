@@ -6,6 +6,7 @@ import { getMealBySlug, getAllMealSlugs } from '@/lib/recipes';
 import { t, type Locale } from '@/lib/i18n';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 import MealShoppingList from '@/components/MealShoppingList';
+import MealAdminControls from '@/components/MealAdminControls';
 import { UtensilsCrossed } from 'lucide-react';
 
 export const revalidate = 3600;
@@ -57,6 +58,16 @@ export default async function MealPage(
           {t(locale, 'recipe_back')}
         </Link>
       </div>
+
+      <MealAdminControls
+        lang={lang}
+        displayTitle={title}
+        meal={{
+          id: meal.id, slug: meal.slug, title: meal.title, title_es: meal.title_es ?? null,
+          note: meal.note ?? null, note_es: meal.note_es ?? null,
+          recipeIds: meal.recipes.map(r => r.id),
+        }}
+      />
 
       <div className="flex items-center gap-2 mb-1" style={{ color: 'var(--accent)' }}>
         <UtensilsCrossed size={16} aria-hidden="true" />

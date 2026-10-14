@@ -3,10 +3,11 @@ import Image from 'next/image';
 import { UtensilsCrossed, ShoppingCart } from 'lucide-react';
 import { t, type Locale } from '@/lib/i18n';
 import type { MealSummary } from '@/lib/types';
+import MealCardDelete from '@/components/MealCardDelete';
 
 /** A meal as a collage card — a 2×2-ish grid of its recipes' photos + the meal
  *  title, recipe count, and a shopping-list cue. Links to the meal page. */
-export default function MealCard({ meal, lang }: { meal: MealSummary; lang: string }) {
+export default function MealCard({ meal, lang, adminDelete = false }: { meal: MealSummary; lang: string; adminDelete?: boolean }) {
   const locale = lang as Locale;
   const es = locale === 'es';
   const title = es ? meal.title_es || meal.title : meal.title;
@@ -22,9 +23,9 @@ export default function MealCard({ meal, lang }: { meal: MealSummary; lang: stri
     return {};
   };
 
-  return (
+  const card = (
     <Link href={`/${lang}/meals/${meal.slug}`}
-      className="card-surface hover-lift group flex flex-col overflow-hidden">
+      className={`card-surface hover-lift group flex flex-col overflow-hidden${adminDelete ? ' h-full' : ''}`}>
       <div className="grid gap-0.5" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', aspectRatio: '16 / 10', background: 'var(--bg)' }}>
         {imgs.length > 0 ? imgs.map((r, i) => (
           <div key={r.id} className="relative overflow-hidden" style={cellStyle(i)}>
@@ -45,4 +46,15 @@ export default function MealCard({ meal, lang }: { meal: MealSummary; lang: stri
       </div>
     </Link>
   );
+
+  // Admin-only delete button laid over the card (opt-in: the home showcase doesn't use it).
+  if (adminDelete && meal.id) {
+    return (
+      <div className="relative">
+        {card}
+        <MealCardDelete mealId={meal.id} title={title} lang={lang} />
+      </div>
+    );
+  }
+  return card;
 }

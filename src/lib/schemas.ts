@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidSlug } from '@/lib/meals';
 
 /**
  * Server-side validation for recipe writes (POST /api/recipes, PUT /api/recipes/[id]).
@@ -84,3 +85,35 @@ export const recipeUpdateSchema = z.object(writeShape).partial();
 
 export type RecipeCreateInput = z.infer<typeof recipeCreateSchema>;
 export type RecipeUpdateInput = z.infer<typeof recipeUpdateSchema>;
+
+// ── Meals (meal_groups) ──────────────────────────────────────────────────────
+// POST /api/meals and PUT /api/meals/[id]. Same column-injection defence as the
+// recipes: only the fields below survive (id, created_at, shopping_list ... are
+// dropped — the server builds shopping_list itself from the chosen recipes).
+
+/** "" / whitespace -> null, so a cleared Spanish field is stored as null and the page falls back to English. */
+const optionalText = (max: number) =>
+  z.string().max(max).nullish().transform(v => (v === undefined ? undefined : v === null || v.trim() === '' ? null : v.trim()));
+
+const mealWriteShape = {
+  title: z.string().trim().min(1).max(200),
+  title_es: optionalText(200),
+  note: optionalText(5000),
+  note_es: optionalText(5000),
+  // Recipe ids are uuids; duplicates are dropped (first position wins); order is the curated order.
+  recipe_ids: z
+    .array(z.uuid())
+    .min(1)
+    .max(40)
+    .transform(ids => [...new Set(ids)]),
+  slug: z.string().trim().refine(isValidSlug, { message: 'slug must be kebab-case (a-z, 0-9, hyphens)' }),
+};
+
+/** New meal: title + at least one recipe. `slug` is optional (made from the title). */
+export const mealCreateSchema = z.object({ ...mealWriteShape, slug: mealWriteShape.slug.optional() });
+
+/** Edit: every field optional. Unknown keys stripped. */
+export const mealUpdateSchema = z.object(mealWriteShape).partial();
+
+export type MealCreateInput = z.infer<typeof mealCreateSchema>;
+export type MealUpdateInput = z.infer<typeof mealUpdateSchema>;

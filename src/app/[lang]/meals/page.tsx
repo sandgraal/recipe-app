@@ -4,6 +4,7 @@ import { getAllMeals } from '@/lib/recipes';
 import { t, type Locale } from '@/lib/i18n';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 import MealCard from '@/components/MealCard';
+import NewMealButton from '@/components/NewMealButton';
 
 export const revalidate = 3600;
 
@@ -46,12 +47,13 @@ export default async function MealsIndexPage(
       <h1 className="text-4xl leading-tight" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, color: 'var(--secondary)' }}>
         {t(locale, 'recipe_make_a_meal')}
       </h1>
-      <p className="mt-2 mb-8 text-base max-w-2xl" style={{ color: 'var(--muted)' }}>
+      <p className="mt-2 mb-4 text-base max-w-2xl" style={{ color: 'var(--muted)' }}>
         {t(locale, 'meals_page_subtitle')}
       </p>
+      <div className="mb-6 empty:hidden"><NewMealButton lang={lang} /></div>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {meals.map(m => <MealCard key={m.slug} meal={m} lang={lang} />)}
+        {meals.map(m => <MealCard key={m.slug} meal={m} lang={lang} adminDelete />)}
       </div>
     </div>
   );

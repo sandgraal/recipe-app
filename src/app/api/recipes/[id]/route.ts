@@ -5,6 +5,7 @@ import { CORS_HEADERS, NO_STORE } from '@/lib/cors';
 import { readJsonBody } from '@/lib/requestBody';
 import { recipeUpdateSchema } from '@/lib/schemas';
 import { computeThumbhashFromUrl } from '@/lib/thumbhashServer';
+import { removeRecipeFromMeals, revalidateMealPages } from '@/lib/mealsServer';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...NO_STORE, ...((init?.headers as Record<string, string>) || {}) } });
@@ -53,5 +54,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const { error } = await supabase.from('recipes').delete().eq('id', id);
   if (error) return json({ error: error.message }, { status: 500 });
-  return json({ success: true });
+  // Integrity: take the deleted recipe out of every meal that listed it (and
+  // rebuild their shopping lists), so meals never point at a missing recipe.
+  // The recipe is already gone, so a cleanup failure is reported, not fatal.
+  const meals = await removeRecipeFromMeals(supabase, id).catch(() => ({ ok: false, updated: 0, slugs: [] as string[] }));
+  if (meals.updated > 0) revalidateMealPages(meals.slugs);
+  return json({ success: true, ...(meals.ok ? {} : { mealCleanupFailed: true }) });
 }
