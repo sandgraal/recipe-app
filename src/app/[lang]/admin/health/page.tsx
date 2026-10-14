@@ -155,7 +155,7 @@ export default function RecipeHealthPage() {
                   {shownRecipes.map(r => (
                     <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 border"
                       style={{ background: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}>
-                      <span className="flex-1 min-w-[10rem] text-sm font-medium break-words" style={{ color: 'var(--text)' }}>{r.title}</span>
+                      <span className="flex-1 min-w-[10rem] text-sm font-medium break-words" style={{ color: 'var(--text)' }}>{locale === 'es' ? r.title_es || r.title : r.title}</span>
                       <span className="flex flex-wrap gap-1.5">
                         {r.issues.map(i => <Chip key={i}>{t(locale, ISSUE_KEY[i])}</Chip>)}
                       </span>
@@ -170,7 +170,7 @@ export default function RecipeHealthPage() {
                         <span className="basis-full text-xs" role="alert" style={{ color: '#e05252' }}>{t(locale, 'health_copy_failed')}</span>
                       )}
                       <Link href={`/${lang}/recipes/${r.id}/edit`} className="text-sm underline" style={{ color: 'var(--accent)' }}
-                        aria-label={`${t(locale, 'health_edit_recipe')}: ${r.title}`}>
+                        aria-label={`${t(locale, 'health_edit_recipe')}: ${locale === 'es' ? r.title_es || r.title : r.title}`}>
                         {t(locale, 'health_edit_recipe')}
                       </Link>
                     </li>

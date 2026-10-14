@@ -55,6 +55,7 @@ export interface HealthMeal {
 export interface RecipeHealthRow {
   id: string;
   title: string;
+  title_es?: string | null;
   issues: RecipeIssue[];
 }
 
@@ -92,7 +93,7 @@ export function recipeIssues(r: HealthRecipe): RecipeIssue[] {
 /** Only the recipes that have at least one issue, sorted by title. */
 export function classifyRecipes(recipes: HealthRecipe[]): RecipeHealthRow[] {
   return recipes
-    .map(r => ({ id: r.id, title: r.title, issues: recipeIssues(r) }))
+    .map(r => ({ id: r.id, title: r.title, title_es: r.title_es ?? null, issues: recipeIssues(r) }))
     .filter(r => r.issues.length > 0)
     .sort((a, b) => a.title.localeCompare(b.title));
 }
