@@ -3,7 +3,7 @@
 ## One-time setup
 
 ### 1. Get an Anthropic API key
-https://console.anthropic.com → API Keys → Create Key. Copy the key (starts with `sk-ant-…`). Needed for the AI features (import / identify / chat / translate).
+https://console.anthropic.com → API Keys → Create Key. Copy the key (starts with `sk-ant-…`). Needed for the AI features (import / identify / chat / translate). All of them use Claude Haiku 5.5 ($0.10 / $0.50 per million input / output tokens for prompts up to 100K tokens).
 
 ### 2. Deploy via the Vercel CLI
 
@@ -25,7 +25,8 @@ Add these in the Vercel dashboard (Project → Settings → Environment Variable
 | `FINCA_ID` | Optional — finca whose editors/admins can sign in with their Finca Colibrí account (default `colibri`). |
 | `ANTHROPIC_API_KEY` | **Secret.** AI features, including the Cocina chat (reused; nothing new to set). |
 | `HUB_ORIGINS` | Optional — comma-separated origins of the finca hub allowed to call `POST /api/cocina/chat` (default `https://sandgraal.github.io,http://localhost:5173,http://localhost:4173`). Only that route reads it. |
-| `COCINA_CHAT_MODEL` | Optional — model for the Cocina chat (default `claude-haiku-5-5`). |
+| `AI_MODEL` | Optional — model for every AI call: import, identify, chat, translate and the Cocina chat (default `claude-haiku-5-5`, no date suffix). |
+| `COCINA_CHAT_MODEL` | Optional — model for the Cocina chat only; wins over `AI_MODEL` (default: `AI_MODEL`). |
 | `NEXT_PUBLIC_SITE_URL` | Optional — canonical origin (defaults to the prod URL). |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Optional — shared-store rate limiting for public AI routes; falls back to an in-memory limiter if unset. |
 

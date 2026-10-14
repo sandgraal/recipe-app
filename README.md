@@ -28,6 +28,7 @@ Part of the **Finca Colibrí** family (shop, recipes, cabins, finca hub): see th
 - Import a recipe from a **URL**, pasted **text**, or a **photo**
 - **Identify** — "what can I cook?" from pantry ingredients
 - Per-recipe **chat** (substitutions, tips, scaling) and on-demand **translation** to Spanish
+- Every AI call runs on **Claude Haiku 5.5** (`claude-haiku-5-5`); see [ARCHITECTURE.md](ARCHITECTURE.md#ai-calls)
 
 **Platform**
 - Installable **PWA** with an offline fallback (`manifest.json` + hand-authored service worker)
@@ -45,7 +46,7 @@ Part of the **Finca Colibrí** family (shop, recipes, cabins, finca hub): see th
 | Styling | Tailwind CSS v4 |
 | Data | Supabase (Postgres 17 + Storage) |
 | Search | Postgres FTS + `pg_trgm` + `unaccent` |
-| AI | Anthropic SDK (`@anthropic-ai/sdk`) |
+| AI | Anthropic SDK (`@anthropic-ai/sdk`) · Claude Haiku 5.5 for every call |
 | Images | Supabase Storage · `sharp` · `thumbhash` |
 | Rate limiting | Upstash Redis (optional; in-memory fallback) |
 | Observability | Vercel Analytics + Speed Insights |
@@ -103,7 +104,8 @@ Copy `.env.local.example` and fill in. `NEXT_PUBLIC_*` values are shipped to the
 | `FINCA_ID` | Optional | Finca whose editors/admins may sign in (default `colibri`). Passed to `public.finca_can_write(p_finca_id)`. |
 | `ANTHROPIC_API_KEY` | For AI features | Import, identify, chat, translate, and the Cocina chat (same key, nothing new to set) |
 | `HUB_ORIGINS` | Optional | Comma-separated origins of the finca hub allowed to call `POST /api/cocina/chat` (only that route; other routes keep the site-origin CORS). Default `https://sandgraal.github.io,http://localhost:5173,http://localhost:4173` |
-| `COCINA_CHAT_MODEL` | Optional | Model for the Cocina chat (default `claude-haiku-5-5`) |
+| `AI_MODEL` | Optional | Model for every AI call: import, identify, chat, translate, Cocina chat (default `claude-haiku-5-5`, no date suffix) |
+| `COCINA_CHAT_MODEL` | Optional | Model for the Cocina chat only; wins over `AI_MODEL` (default: `AI_MODEL`) |
 | `NEXT_PUBLIC_SITE_URL` | Optional | Canonical origin for CORS, metadata, sitemap, JSON-LD (defaults to the prod URL) |
 | `UPSTASH_REDIS_REST_URL` | Optional | Shared-store rate limiting for public AI routes; falls back to an in-memory limiter if unset |
 | `UPSTASH_REDIS_REST_TOKEN` | Optional | Token for the above |
