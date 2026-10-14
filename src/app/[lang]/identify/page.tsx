@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from '@/components/SafeImage';
 import { Recipe } from '@/lib/types';
 import { t, localizeCategory, localizeIngredient, type Locale } from '@/lib/i18n';
 import { useAdmin, getAdminHeaders } from '@/lib/useAdmin';

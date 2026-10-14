@@ -5,13 +5,13 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabase } from '@/lib/supabase';
 import { t, type Locale, type TranslationKey } from '@/lib/i18n';
-import { useAdmin } from '@/lib/useAdmin';
+import { getAdminHeaders, useAdmin } from '@/lib/useAdmin';
 import {
   classifyMeals, classifyRecipes, countByIssue, RECIPE_ISSUES,
   type HealthMeal, type HealthRecipe, type MealHealthRow, type RecipeHealthRow, type RecipeIssue,
 } from '@/lib/recipeHealth';
 
-const RECIPE_COLUMNS = 'id,title,title_es,image_url,region,category,dietary,ingredients,steps,steps_es';
+const RECIPE_COLUMNS = 'id,title,title_es,image_url,total_time,region,category,dietary,ingredients,steps,steps_es';
 const PAGE = 1000; // PostgREST returns at most 1000 rows per request
 
 type Data = { recipes: HealthRecipe[]; meals: HealthMeal[] };
@@ -33,6 +33,8 @@ async function loadHealthData(): Promise<Data> {
 
 const ISSUE_KEY: Record<RecipeIssue, TranslationKey> = {
   no_cover: 'health_issue_no_cover',
+  external_photo: 'health_issue_external_photo',
+  no_time_es: 'health_issue_no_time_es',
   no_title_es: 'health_issue_no_title_es',
   no_steps_es: 'health_issue_no_steps_es',
   no_region: 'health_issue_no_region',
@@ -57,6 +59,23 @@ export default function RecipeHealthPage() {
   const [data, setData] = useState<Data | null>(null);
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState<RecipeIssue | null>(null);
+  const [copy, setCopy] = useState<Record<string, 'busy' | 'done' | 'failed'>>({});
+
+  /** Admin action: copy one recipe's hotlinked photo into our storage (the API re-checks admin rights). */
+  async function copyPhoto(id: string) {
+    setCopy(c => ({ ...c, [id]: 'busy' }));
+    try {
+      const res = await fetch(`/api/recipes/${id}/rehost-image`, { method: 'POST', cache: 'no-store', headers: { ...getAdminHeaders() } });
+      const body = await res.json().catch(() => ({}));
+      const url = body?.recipe?.image_url as string | undefined;
+      if (!res.ok || !url) throw new Error(`HTTP ${res.status}`);
+      setData(d => (d ? { ...d, recipes: d.recipes.map(r => (r.id === id ? { ...r, image_url: url } : r)) } : d));
+      setCopy(c => ({ ...c, [id]: 'done' }));
+    } catch (err) {
+      console.error('copy photo failed', err);
+      setCopy(c => ({ ...c, [id]: 'failed' }));
+    }
+  }
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -140,6 +159,16 @@ export default function RecipeHealthPage() {
                       <span className="flex flex-wrap gap-1.5">
                         {r.issues.map(i => <Chip key={i}>{t(locale, ISSUE_KEY[i])}</Chip>)}
                       </span>
+                      {r.issues.includes('external_photo') && (
+                        <button type="button" onClick={() => copyPhoto(r.id)} disabled={copy[r.id] === 'busy'}
+                          className="px-3 py-1 text-xs font-medium border rounded-full disabled:opacity-60"
+                          style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--text)' }}>
+                          {copy[r.id] === 'busy' ? t(locale, 'health_copying') : t(locale, 'health_copy_photo')}
+                        </button>
+                      )}
+                      {copy[r.id] === 'failed' && (
+                        <span className="basis-full text-xs" role="alert" style={{ color: '#e05252' }}>{t(locale, 'health_copy_failed')}</span>
+                      )}
                       <Link href={`/${lang}/recipes/${r.id}/edit`} className="text-sm underline" style={{ color: 'var(--accent)' }}
                         aria-label={`${t(locale, 'health_edit_recipe')}: ${r.title}`}>
                         {t(locale, 'health_edit_recipe')}

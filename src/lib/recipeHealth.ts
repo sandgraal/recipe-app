@@ -3,6 +3,8 @@
  * meals have gaps worth fixing. No I/O here; the page fetches the public
  * columns and hands them in.
  */
+import { isExternalImageUrl } from '@/lib/imageHost';
+import { timeNeedsSpanish } from '@/lib/i18n';
 
 /** A recipe with this many ingredients or fewer counts as "very short". */
 export const SHORT_INGREDIENT_MAX = 2;
@@ -11,7 +13,9 @@ export const MIN_MEAL_RECIPES = 3;
 
 export type RecipeIssue =
   | 'no_cover'
+  | 'external_photo'
   | 'no_title_es'
+  | 'no_time_es'
   | 'no_steps_es'
   | 'no_region'
   | 'no_category'
@@ -19,7 +23,7 @@ export type RecipeIssue =
   | 'short_ingredients';
 
 export const RECIPE_ISSUES: RecipeIssue[] = [
-  'no_cover', 'no_title_es', 'no_steps_es', 'no_region', 'no_category', 'no_dietary', 'short_ingredients',
+  'no_cover', 'external_photo', 'no_title_es', 'no_time_es', 'no_steps_es', 'no_region', 'no_category', 'no_dietary', 'short_ingredients',
 ];
 
 export type MealIssue = 'few_recipes' | 'missing_recipes';
@@ -30,6 +34,7 @@ export interface HealthRecipe {
   title: string;
   title_es?: string | null;
   image_url?: string | null;
+  total_time?: string | null;
   region?: string | null;
   category?: string | null;
   dietary?: string[] | null;
@@ -71,7 +76,10 @@ const emptyList = (a: unknown[] | null | undefined) => !Array.isArray(a) || a.le
 export function recipeIssues(r: HealthRecipe): RecipeIssue[] {
   const out: RecipeIssue[] = [];
   if (blank(r.image_url)) out.push('no_cover');
+  if (isExternalImageUrl(r.image_url)) out.push('external_photo');
   if (blank(r.title_es)) out.push('no_title_es');
+  // A time the Spanish view cannot fully translate (no time_es column exists yet).
+  if (timeNeedsSpanish(r.total_time)) out.push('no_time_es');
   // Only a recipe that has English steps can be missing their Spanish version.
   if (!emptyList(r.steps) && emptyList(r.steps_es)) out.push('no_steps_es');
   if (blank(r.region)) out.push('no_region');

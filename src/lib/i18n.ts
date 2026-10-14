@@ -160,7 +160,7 @@ export const translations = {
     // Recipe health (admins only)
     nav_health: 'Health',
     health_title: 'Recipe health',
-    health_subtitle: 'What is still missing across the recipes and meals. Nothing is changed from here.',
+    health_subtitle: 'What is still missing across the recipes and meals. Nothing changes unless you press Copy photo.',
     health_admin_only: 'This page is for admins. Sign in with the lock icon to see it.',
     health_loading: 'Checking the recipes…',
     health_failed: 'Could not load the recipes. Refresh to try again.',
@@ -173,6 +173,12 @@ export const translations = {
     health_open_meal: 'Open meal',
     health_meal_no_slug: 'This meal has no web address yet.',
     health_issue_no_cover: 'No cover photo',
+    health_issue_external_photo: 'Photo is a link to another site',
+    health_issue_no_time_es: 'Time has no Spanish version',
+    health_copy_photo: 'Copy photo to our storage',
+    health_copying: 'Copying…',
+    health_copied: 'Photo copied',
+    health_copy_failed: 'Could not copy the photo. The other site may block it, or the file is too big or not an image.',
     health_issue_no_title_es: 'No Spanish title',
     health_issue_no_steps_es: 'No Spanish steps',
     health_issue_no_region: 'No region',
@@ -457,7 +463,7 @@ export const translations = {
     // Salud de las recetas (solo admins)
     nav_health: 'Salud',
     health_title: 'Salud de las recetas',
-    health_subtitle: 'Lo que todavía falta en las recetas y las comidas. Desde aquí no se cambia nada.',
+    health_subtitle: 'Lo que todavía falta en las recetas y las comidas. Nada cambia a menos que presiones Copiar foto.',
     health_admin_only: 'Esta página es para admins. Inicia sesión con el candado para verla.',
     health_loading: 'Revisando las recetas…',
     health_failed: 'No se pudieron cargar las recetas. Recarga para intentarlo de nuevo.',
@@ -470,6 +476,12 @@ export const translations = {
     health_open_meal: 'Abrir la comida',
     health_meal_no_slug: 'Esta comida todavía no tiene dirección web.',
     health_issue_no_cover: 'Sin foto de portada',
+    health_issue_external_photo: 'La foto es un enlace a otro sitio',
+    health_issue_no_time_es: 'El tiempo no tiene versión en español',
+    health_copy_photo: 'Copiar la foto a nuestro almacenamiento',
+    health_copying: 'Copiando…',
+    health_copied: 'Foto copiada',
+    health_copy_failed: 'No se pudo copiar la foto. Puede que el otro sitio la bloquee, o que el archivo sea muy grande o no sea una imagen.',
     health_issue_no_title_es: 'Sin título en español',
     health_issue_no_steps_es: 'Sin pasos en español',
     health_issue_no_region: 'Sin región',
@@ -674,6 +686,20 @@ export function hasSpanishTranslation(recipe: Recipe): boolean {
 // This function translates common time words to Spanish when needed.
 
 const TIME_ES: [RegExp, string][] = [
+  // Phrases first (imports often say "About 2–2 ½ h from start to finish").
+  [/\bfrom start to finish\b/gi, 'de principio a fin'],
+  [/\bstart to finish\b/gi, 'de principio a fin'],
+  [/\bovernight\b/gi, 'de un día para otro'],
+  [/\bor so\b/gi, 'más o menos'],
+  [/\bup to\b/gi, 'hasta'],
+  [/\b(?:about|approximately|approx\.?|around)(?=\s|$)/gi, 'aprox.'],
+  [/\bplus\b/gi, 'más'],
+  [/\bresting\b|\brest\b/gi, 'reposo'],
+  [/\bchilling\b|\bchill\b/gi, 'refrigeración'],
+  [/\bmarinating\b|\bmarinate\b/gi, 'marinado'],
+  [/\band\b/gi, 'y'],
+  [/\bto\b/gi, 'a'],
+  [/\bor\b/gi, 'o'],
   [/\bhours?\b/gi, 'h'],
   [/\bhr?s?\b/gi, 'h'],
   [/\bminutes?\b/gi, 'min'],
@@ -689,6 +715,21 @@ export function formatTime(time: string | null | undefined, lang: Locale): strin
   let out = time;
   for (const [pat, rep] of TIME_ES) out = out.replace(pat, rep);
   return out;
+}
+
+// Words that are fine in a Spanish time string (what formatTime produces, plus
+// what someone typing it in Spanish would use).
+const SPANISH_TIME_WORDS = new Set([
+  'min', 'seg', 'aprox', 'principio', 'fin', 'para', 'otro', 'reposo', 'refrigeración', 'marinado',
+  'más', 'menos', 'hasta', 'día', 'días', 'semana', 'semanas', 'hora', 'horas', 'minuto', 'minutos',
+  'segundo', 'segundos', 'aproximadamente', 'media', 'medio', 'desde', 'noche', 'unas', 'cada', 'por',
+]);
+
+/** True when a Spanish view of this time would still show English words that formatTime cannot translate. */
+export function timeNeedsSpanish(time: string | null | undefined): boolean {
+  if (!time || !time.trim()) return false;
+  const words = formatTime(time, 'es').toLowerCase().match(/\p{L}{3,}/gu) ?? [];
+  return words.some(w => !SPANISH_TIME_WORDS.has(w));
 }
 
 // ── Measurement unit localisation ─────────────────────────────────────────────

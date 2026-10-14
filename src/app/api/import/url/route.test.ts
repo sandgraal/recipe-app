@@ -4,9 +4,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { RECIPE, haikuRequestProblems, jsonMessage, message, refusalMessage, thinking, truncatedMessage } from '@/lib/testing/aiMessages';
 
 vi.mock('@/lib/rateLimit', () => ({ checkRateLimit: vi.fn().mockResolvedValue(null) }));
+vi.mock('@/lib/supabase', () => ({ getServiceSupabase: vi.fn(() => ({})), getSupabase: vi.fn(() => ({})) }));
+vi.mock('@/lib/rehostImage', () => ({ rehostImage: vi.fn() }));
 vi.mock('@/lib/logger', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
 import { POST } from './route';
+import { rehostImage } from '@/lib/rehostImage';
+
+const OURS = 'https://cjnwvxtomwyszcfuvgpw.supabase.co/storage/v1/object/public/recipe-images/recipe-rehost-1-abc.jpg';
 
 const PAGE = `<html><head><meta property="og:image" content="https://cdn.example/hero.jpg"></head>
 <body><script>var x=1</script><h1>Gallo pinto</h1><p>Rice and beans, the Costa Rican way.</p></body></html>`;
@@ -27,6 +32,8 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response(PAGE, { status: 200 })));
   stream = vi.spyOn(Anthropic.Messages.prototype, 'stream');
   answer(jsonMessage(RECIPE));
+  vi.mocked(rehostImage).mockReset();
+  vi.mocked(rehostImage).mockResolvedValue({ ok: true, url: OURS, unchanged: false });
 });
 afterEach(() => { stream.mockRestore(); vi.unstubAllGlobals(); });
 
@@ -42,14 +49,23 @@ describe('POST /api/import/url', () => {
     expect(prompt).not.toContain('var x=1'); // scripts are stripped
   });
 
-  it('returns the recipe with source url and og:image, past a thinking block', async () => {
+  it('returns the recipe with source url and OUR copy of the og:image, past a thinking block', async () => {
     const res = await POST(req({ url: 'https://recipes.example.com/gallo-pinto' }));
     expect(res.status).toBe(200);
     const { recipe } = await res.json();
     expect(recipe).toMatchObject({
       title: 'Gallo pinto', source_type: 'url',
-      source_url: 'https://recipes.example.com/gallo-pinto', image_url: 'https://cdn.example/hero.jpg',
+      source_url: 'https://recipes.example.com/gallo-pinto', image_url: OURS,
     });
+    expect(rehostImage).toHaveBeenCalledWith('https://cdn.example/hero.jpg', expect.anything());
+  });
+
+  it('saves no image (never the hotlink) when the cover cannot be copied', async () => {
+    vi.mocked(rehostImage).mockResolvedValue({ ok: false, reason: 'fetch_failed' });
+    const res = await POST(req({ url: 'https://recipes.example.com/gallo-pinto' }));
+    const { recipe } = await res.json();
+    expect(recipe.image_url).toBeUndefined();
+    expect(recipe.gallery_images).toBeUndefined();
   });
 
   it('refusal is a 422 in both languages', async () => {

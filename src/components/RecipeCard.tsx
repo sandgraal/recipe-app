@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from '@/components/SafeImage';
 import { useParams } from 'next/navigation';
 import { Recipe } from '@/lib/types';
 import { recipeTitle, recipeTags, formatTime, localizeCuisine, localizeRecipeCategory, localizeDifficulty, type Locale } from '@/lib/i18n';

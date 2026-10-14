@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef, type TouchEvent as ReactTouchEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from '@/components/SafeImage';
 import { Recipe, MealGroup } from '@/lib/types';
 import {
   t, formatTime, localizeUnit, localizeCuisine, type Locale,

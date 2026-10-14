@@ -4,6 +4,9 @@ import { writeAllowed } from '@/lib/adminAuth';
 import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { isPublicHttpUrl } from '@/lib/ssrf';
+import { safeFetch } from '@/lib/safeFetch';
+import { rehostImage } from '@/lib/rehostImage';
+import { getServiceSupabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { extractRecipe } from '@/lib/importRecipe';
 
@@ -13,31 +16,6 @@ function json(data: unknown, init?: ResponseInit) {
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
-}
-
-/**
- * Fetch following redirects MANUALLY, re-validating every hop against
- * isPublicHttpUrl — so a public URL can't 30x-redirect into a private/internal
- * target (the redirect-based SSRF bypass). Caps redirect depth.
- */
-async function safeFetch(initialUrl: string, maxRedirects = 4): Promise<Response> {
-  let current = initialUrl;
-  for (let hop = 0; hop <= maxRedirects; hop++) {
-    if (!isPublicHttpUrl(current)) throw new Error('blocked-url');
-    const res = await fetch(current, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecipeBot/1.0)' },
-      redirect: 'manual',
-      signal: AbortSignal.timeout(15000),
-    });
-    if (res.status >= 300 && res.status < 400) {
-      const loc = res.headers.get('location');
-      if (!loc) return res;
-      current = new URL(loc, current).toString();
-      continue;
-    }
-    return res;
-  }
-  throw new Error('too-many-redirects');
 }
 
 function extractOgImage(rawHtml: string): string | null {
@@ -149,8 +127,19 @@ ${html}`, 'Could not parse recipe');
   const recipe = result.recipe;
   recipe.source_url = url;
   recipe.source_type = 'url';
-  if (ogImage) recipe.image_url = ogImage;
-  if (galleryImages.length > 0) recipe.gallery_images = galleryImages;
+  // Never keep a hotlink: copy the cover into our own storage, or save no image.
+  // The page's cover is tried first, then up to two of its other pictures. (Those
+  // other pictures are hotlinks, so they are not carried over as a gallery.)
+  const candidates = [...new Set([ogImage, ...galleryImages].filter((u): u is string => !!u))].slice(0, 3);
+  if (candidates.length > 0) {
+    let storage: ReturnType<typeof getServiceSupabase> | null = null;
+    try { storage = getServiceSupabase(); } catch (err) { logger.warn('import/url: storage unavailable', { err: String(err) }); }
+    for (const candidate of storage ? candidates : []) {
+      const hosted = await rehostImage(candidate, storage!);
+      if (hosted.ok) { recipe.image_url = hosted.url; break; }
+      logger.warn('import/url: image not re-hosted', { url, candidate, reason: hosted.reason });
+    }
+  }
   return json({ recipe });
 }
 

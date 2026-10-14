@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from '@/components/SafeImage';
 import { UtensilsCrossed, ShoppingCart } from 'lucide-react';
 import { t, type Locale } from '@/lib/i18n';
 import type { MealSummary } from '@/lib/types';

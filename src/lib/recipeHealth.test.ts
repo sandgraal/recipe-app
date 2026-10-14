@@ -8,7 +8,8 @@ const ing = (n: number) => Array.from({ length: n }, (_, i) => ({ amount: '1', u
 const steps = [{ order: 1, text: 'Cook.' }];
 
 const healthy: HealthRecipe = {
-  id: 'ok', title: 'Gallo pinto', title_es: 'Gallo pinto', image_url: 'https://x/y.jpg',
+  id: 'ok', title: 'Gallo pinto', title_es: 'Gallo pinto',
+  image_url: 'https://cjnwvxtomwyszcfuvgpw.supabase.co/storage/v1/object/public/recipe-images/y.jpg', total_time: '1 hour 30 minutes',
   region: 'Costa Rica', category: 'Mains', dietary: ['vegan'],
   ingredients: ing(5), steps, steps_es: steps,
 };
@@ -22,6 +23,17 @@ describe('recipeIssues', () => {
     expect(recipeIssues({ ...healthy, image_url: null })).toEqual(['no_cover']);
     expect(recipeIssues({ ...healthy, image_url: '   ' })).toEqual(['no_cover']);
     expect(recipeIssues({ ...healthy, image_url: undefined })).toEqual(['no_cover']);
+  });
+
+  it('flags a hotlinked photo (not in our storage) but not a missing one twice', () => {
+    expect(recipeIssues({ ...healthy, image_url: 'https://recipeoutline.com/pizza.jpg' })).toEqual(['external_photo']);
+    expect(recipeIssues({ ...healthy, image_url: null })).toEqual(['no_cover']);
+  });
+
+  it('flags a time the Spanish view cannot translate, not one it can', () => {
+    expect(recipeIssues({ ...healthy, total_time: 'About 2–2 ½ h from start to finish' })).toEqual([]);
+    expect(recipeIssues({ ...healthy, total_time: '2 hours, depending on your oven' })).toEqual(['no_time_es']);
+    expect(recipeIssues({ ...healthy, total_time: null })).toEqual([]);
   });
 
   it('flags a missing Spanish title', () => {
@@ -53,9 +65,9 @@ describe('recipeIssues', () => {
   });
 
   it('lists several issues in a stable order', () => {
-    const bare: HealthRecipe = { id: 'b', title: 'Bare', ingredients: [], steps }; 
+    const bare: HealthRecipe = { id: 'b', title: 'Bare', ingredients: [], steps, image_url: 'https://x.example/a.jpg', total_time: 'Ready when golden' };
     expect(recipeIssues(bare)).toEqual([
-      'no_cover', 'no_title_es', 'no_steps_es', 'no_region', 'no_category', 'no_dietary', 'short_ingredients',
+      'external_photo', 'no_title_es', 'no_time_es', 'no_steps_es', 'no_region', 'no_category', 'no_dietary', 'short_ingredients',
     ]);
   });
 });
