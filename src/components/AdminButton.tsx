@@ -57,9 +57,14 @@ export default function AdminButton({ lang }: Props) {
       {/* Nav controls */}
       <div className="flex items-center gap-1">
         {isAdmin && (
-          <Link href={`/${lang}/import`} className="nav-pill">
-            {t(locale, 'nav_import')}
-          </Link>
+          <>
+            <Link href={`/${lang}/import`} className="nav-pill">
+              {t(locale, 'nav_import')}
+            </Link>
+            <Link href={`/${lang}/admin/health`} className="nav-pill" title={t(locale, 'health_title')} aria-label={t(locale, 'health_title')}>
+              {t(locale, 'nav_health')}
+            </Link>
+          </>
         )}
 
         {isAdmin ? (
