@@ -84,7 +84,7 @@ describe('POST /api/meals', () => {
     expect(row.id).toBeUndefined();
     expect(row.created_at).toBeUndefined();
     expect(row.shopping_list).toEqual([
-      { aisle: 'Produce', aisle_es: 'Frutas y verduras', items: [{ name: 'Tomato', name_es: 'Tomate', qty: '3', qty_es: '3' }] },
+      { aisle: 'Produce', aisle_es: 'Frutas y Verduras', items: [{ name: 'Tomato', name_es: 'Tomate', qty: '3', qty_es: '3' }] },
     ]);
     const paths = revalidatePath.mock.calls.map(c => c[0]);
     expect(paths).toEqual(expect.arrayContaining(['/en/meals', '/es/meals', '/en/meals/sunday-lunch', '/es/meals/sunday-lunch', '/en', '/es']));

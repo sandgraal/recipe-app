@@ -20,15 +20,15 @@ export interface RecipeIngredients {
 
 interface Aisle { key: string; en: string; es: string }
 
-// Display order of the aisles; "other" is always last.
+// Display order of the aisles; "other" is always last. Names match the lists already in meal_groups.shopping_list.
 const AISLES: Aisle[] = [
-  { key: 'produce', en: 'Produce', es: 'Frutas y verduras' },
-  { key: 'meat', en: 'Meat & seafood', es: 'Carnes y mariscos' },
-  { key: 'dairy', en: 'Dairy & eggs', es: 'Lácteos y huevos' },
+  { key: 'produce', en: 'Produce', es: 'Frutas y Verduras' },
+  { key: 'meat', en: 'Meat & Seafood', es: 'Carnes y Mariscos' },
+  { key: 'dairy', en: 'Dairy & Eggs', es: 'Lácteos y Huevos' },
   { key: 'bakery', en: 'Bakery', es: 'Panadería' },
   { key: 'pantry', en: 'Pantry', es: 'Despensa' },
-  { key: 'spices', en: 'Spices & seasonings', es: 'Especias y condimentos' },
-  { key: 'sauces', en: 'Sauces & condiments', es: 'Salsas y aderezos' },
+  { key: 'spices', en: 'Spices', es: 'Especias' },
+  { key: 'sauces', en: 'Sauces & Condiments', es: 'Salsas y Aderezos' },
   { key: 'drinks', en: 'Drinks', es: 'Bebidas' },
   { key: 'other', en: 'Other', es: 'Otros' },
 ];
@@ -38,7 +38,7 @@ const AISLES: Aisle[] = [
 // Patterns are matched against the accent-stripped, lower-cased English + Spanish name.
 const RULES: Array<[string, RegExp]> = [
   ['spices', /\b(garlic powder|onion powder|chili powder|chile powder|curry powder|ajo en polvo|cebolla en polvo|chile en polvo|curry|salt|sal|pepper flakes|black pepper|white pepper|pimienta|cumin|comino|paprika|paprica|oregano|turmeric|curcuma|cinnamon|canela|nutmeg|nuez moscada|cloves|clavos?|cardamom|cardamomo|bay leaves|bay leaf|laurel|vanilla|vainilla|seasoning|sazonador|spice|especias?|achiote|annatto|allspice)\b/],
-  ['drinks', /\b(wine|vino|beer|cerveza|rum|ron|guaro|juice|jugo|soda|water|agua|coffee|cafe|tea|sparkling)\b/],
+  ['drinks', /\b(wine|vino|beer|cerveza|rum|ron|guaro|soda|water|agua|coffee|cafe|tea|sparkling)\b/],
   ['sauces', /\b(sauce|salsa|ketchup|catsup|mustard|mostaza|mayonnaise|mayo|mayonesa|vinegar|vinagre|lizano|worcestershire|dressing|aderezo|pesto|tahini|hummus)\b/],
   ['pantry', /\b(coconut milk|leche de coco|coconut cream|crema de coco|broth|stock|caldo|bouillon|consome|rice|arroz|beans?|frijoles?|lentils?|lentejas?|chickpeas?|garbanzos?|flour|harina|sugar|azucar|honey|miel|syrup|sirope|molasses|panela|tapa de dulce|oil|aceite|pasta|spaghetti|noodles?|fideos?|oats?|avena|cornmeal|masa|canned|enlatad[oa]s?|tomato paste|pasta de tomate|baking powder|baking soda|polvo de hornear|bicarbonato|cornstarch|maicena|cocoa|cacao|chocolate|peanut butter|mantequilla de mani|nuts?|almonds?|almendras?|walnuts?|nueces|peanuts?|mani|cashews?|raisins?|pasas|coconut|coco|seeds?|semillas?|breadcrumbs|pan molido|olives?|aceitunas?|capers?|alcaparras?|dried)\b/],
   ['dairy', /\b(milk|leche|cream|crema|natilla|butter|mantequilla|cheese|queso|yogurt|yoghurt|yogur|eggs?|huevos?|cuajada|margarine|margarina)\b/],

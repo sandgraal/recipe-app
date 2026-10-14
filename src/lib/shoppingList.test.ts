@@ -70,7 +70,7 @@ describe('buildShoppingList', () => {
     expect(out).toEqual([
       {
         aisle: 'Produce',
-        aisle_es: 'Frutas y verduras',
+        aisle_es: 'Frutas y Verduras',
         items: [{ name: 'Tomatoes', name_es: 'Tomates', qty: '2 cups', qty_es: '2 tazas' }],
       },
     ]);
@@ -112,7 +112,7 @@ describe('buildShoppingList', () => {
     const out = buildShoppingList([
       { ingredients: [{ item: 'Mystery thing', amount: '1', unit: '' }, { item: 'Chicken', amount: '1', unit: 'kg' }, { item: 'Tomato', amount: '3', unit: '' }] },
     ]);
-    expect(out.map(a => a.aisle)).toEqual(['Produce', 'Meat & seafood', 'Other']);
+    expect(out.map(a => a.aisle)).toEqual(['Produce', 'Meat & Seafood', 'Other']);
     expect(out[2].aisle_es).toBe('Otros');
   });
 
@@ -128,5 +128,11 @@ describe('buildShoppingList', () => {
     const all = out.flatMap(a => a.items);
     expect(all.find(i => i.name === 'Beans')?.name_es).toBe('Frijoles');
     expect(all.find(i => i.name === 'Rice')?.name_es).toBeNull();
+  });
+});
+
+describe('aisle rules (owner review)', () => {
+  it('keeps lime juice with the fruit, not in drinks', () => {
+    expect(aisleKeyFor('lime juice', 'jugo de limón')).toBe('produce');
   });
 });
