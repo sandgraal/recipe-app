@@ -4,6 +4,8 @@ import { getSupabase } from '@/lib/supabase';
 import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
+import { AI_EFFORT, AI_MAX_TOKENS, aiModel, parseJsonObject, problemText, readOutcome, runMessage } from '@/lib/ai';
+import { IDENTIFY_SCHEMA, SUGGESTIONS_SCHEMA } from '@/lib/aiSchemas';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -46,37 +48,34 @@ export async function POST(req: NextRequest) {
     const base64 = buffer.toString('base64');
     const mediaType = (file.type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
-    const identifyMsg = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 1024,
+    const identifyMsg = await runMessage(client, {
+      model: aiModel(),
+      max_tokens: AI_MAX_TOKENS.extract,
+      output_config: { effort: AI_EFFORT.extract, format: { type: 'json_schema', schema: IDENTIFY_SCHEMA } },
       messages: [{
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
           {
             type: 'text',
-            text: `Identify all ingredients visible in this photo. Return ONLY a JSON object (no markdown):
-{
-  "ingredients": string[],
-  "search_terms": string[]
-}
+            text: `Identify all ingredients visible in this photo.
 "search_terms" should be 2-3 word phrases useful for finding recipes that use these ingredients (e.g. "chicken pasta", "tomato basil").`,
           },
         ],
       }],
     });
 
-    const identifyRaw = (identifyMsg.content[0] as { type: string; text: string }).text.trim();
-    const identifyMatch = identifyRaw.match(/\{[\s\S]*\}/);
-    if (!identifyMatch) return json({ error: 'Could not identify ingredients' }, { status: 422 });
-
-    try {
-      const parsed = JSON.parse(identifyMatch[0]);
-      identified = parsed.ingredients || [];
-      searchTerms = parsed.search_terms || [];
-    } catch {
-      return json({ error: 'Parse error' }, { status: 422 });
+    const seen = readOutcome(identifyMsg);
+    if (seen.kind === 'refusal' || seen.kind === 'max_tokens') {
+      logger.warn(`identify: ${seen.kind}`, { step: 'photo', ...(seen.kind === 'refusal' ? { category: seen.category } : {}) });
+      return json({ error: problemText(seen.kind) }, { status: 422 });
     }
+    const parsed = seen.kind === 'ok' ? parseJsonObject(seen.text) : null;
+    if (!parsed) {
+      return json({ error: seen.kind === 'ok' ? 'Parse error' : 'Could not identify ingredients' }, { status: 422 });
+    }
+    identified = Array.isArray(parsed.ingredients) ? (parsed.ingredients as string[]) : [];
+    searchTerms = Array.isArray(parsed.search_terms) ? (parsed.search_terms as string[]) : [];
   }
 
   if (identified.length === 0) {
@@ -98,9 +97,10 @@ export async function POST(req: NextRequest) {
   }));
 
   // Step 3: Ask Claude to match and suggest
-  const suggestMsg = await client.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 2048,
+  const suggestMsg = await runMessage(client, {
+    model: aiModel(),
+    max_tokens: AI_MAX_TOKENS.extract,
+    output_config: { effort: AI_EFFORT.extract, format: { type: 'json_schema', schema: SUGGESTIONS_SCHEMA } },
     messages: [{
       role: 'user',
       content: `I have these ingredients: ${identified.join(', ')}.
@@ -108,36 +108,27 @@ export async function POST(req: NextRequest) {
 My recipe collection:
 ${JSON.stringify(collectionSummary, null, 2)}
 
-Return ONLY a JSON object (no markdown):
-{
-  "matching_recipe_ids": string[],
-  "suggestions": [
-    {
-      "title": string,
-      "description": string,
-      "key_steps": string[]
-    }
-  ]
-}
-
 "matching_recipe_ids" should be IDs from my collection that can be made with the available ingredients.
 "suggestions" should be 3 new recipe ideas that use the identified ingredients (not from my collection).`,
     }],
   });
 
-  const suggestRaw = (suggestMsg.content[0] as { type: string; text: string }).text.trim();
-  const suggestMatch = suggestRaw.match(/\{[\s\S]*\}/);
   let matchingIds: string[] = [];
   let suggestions: Array<{ title: string; description: string; key_steps: string[] }> = [];
 
-  if (suggestMatch) {
-    try {
-      const parsed = JSON.parse(suggestMatch[0]);
-      matchingIds = parsed.matching_recipe_ids || [];
-      suggestions = parsed.suggestions || [];
-    } catch (err) {
-      logger.warn('identify: could not parse suggestions JSON', { err: String(err) });
+  // A refused or cut-off second step is not fatal: the ingredients are still
+  // returned, just without matches and ideas.
+  const suggested = readOutcome(suggestMsg);
+  if (suggested.kind === 'ok') {
+    const parsed = parseJsonObject(suggested.text);
+    if (parsed) {
+      matchingIds = Array.isArray(parsed.matching_recipe_ids) ? (parsed.matching_recipe_ids as string[]) : [];
+      suggestions = Array.isArray(parsed.suggestions) ? (parsed.suggestions as typeof suggestions) : [];
+    } else {
+      logger.warn('identify: could not parse suggestions JSON');
     }
+  } else {
+    logger.warn(`identify: suggestions ${suggested.kind}`, suggested.kind === 'refusal' ? { category: suggested.category } : undefined);
   }
 
   const fromCollection = collection.filter(r => matchingIds.includes(r.id));

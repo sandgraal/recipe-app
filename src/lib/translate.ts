@@ -1,4 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { AI_EFFORT, AI_MAX_TOKENS, aiModel, parseJsonObject, readOutcome, runMessage } from '@/lib/ai';
+import { TRANSLATION_SCHEMA } from '@/lib/aiSchemas';
+import { logger } from '@/lib/logger';
 
 // Shared recipe → Spanish translation logic, used by both the on-demand
 // /api/translate route and the auto-translate-on-create path in POST /api/recipes.
@@ -15,6 +18,15 @@ export interface SpanishFields {
   ingredients_es: { item: string; notes?: string }[];
   translated_at: string;
 }
+
+type TranslatedJson = {
+  title?: string;
+  description?: string;
+  notes?: string;
+  tags?: string[];
+  ingredients?: { item?: string; notes?: string }[];
+  steps?: string[];
+};
 
 interface TranslatableRecipe {
   title: string;
@@ -51,7 +63,7 @@ export async function buildSpanishFields(
     steps: (recipe.steps || []).map((s) => s.text),
   };
 
-  const prompt = `Translate the following recipe fields from English to Spanish. Return ONLY a valid JSON object with the same structure — no markdown, no explanation.
+  const prompt = `Translate the following recipe fields from English to Spanish. Keep the same structure: same number of ingredients and steps, in the same order.
 
 Rules:
 - Translate naturally, not word-for-word. Use culinary Spanish appropriate for Latin America.
@@ -60,35 +72,24 @@ Rules:
 - If a field is empty string or empty array, return it as-is.
 
 Input JSON:
-${JSON.stringify(payload, null, 2)}
+${JSON.stringify(payload, null, 2)}`;
 
-Return format:
-{
-  "title": "...",
-  "description": "...",
-  "notes": "...",
-  "tags": [...],
-  "ingredients": [{"item": "...", "notes": "..."}],
-  "steps": [...]
-}`;
-
-  const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4096,
+  const message = await runMessage(client, {
+    model: aiModel(),
+    max_tokens: AI_MAX_TOKENS.translate,
+    output_config: { effort: AI_EFFORT.translate, format: { type: 'json_schema', schema: TRANSLATION_SCHEMA } },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const rawText = message.content[0].type === 'text' ? message.content[0].text : '';
-  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return null;
-
-  let translated;
-  try {
-    translated = JSON.parse(jsonMatch[0]);
-  } catch {
-    // Malformed model output — honor the null contract instead of throwing.
+  // A refused or cut-off translation is "skip, leave untranslated" (null), never a half-translation.
+  const outcome = readOutcome(message);
+  if (outcome.kind !== 'ok') {
+    logger.warn(`translate: ${outcome.kind}`, outcome.kind === 'refusal' ? { category: outcome.category } : { outputTokens: message.usage.output_tokens });
     return null;
   }
+  const translated = parseJsonObject(outcome.text) as TranslatedJson | null;
+  // Malformed model output — honor the null contract instead of throwing.
+  if (!translated) return null;
 
   const stepsEs: Step[] = (recipe.steps || []).map((s, idx) => ({
     ...s,
@@ -104,7 +105,7 @@ Return format:
     title_es: translated.title || recipe.title,
     description_es: translated.description || null,
     notes_es: translated.notes || null,
-    tags_es: translated.tags?.length > 0 ? translated.tags : null,
+    tags_es: translated.tags && translated.tags.length > 0 ? translated.tags : null,
     steps_es: stepsEs,
     ingredients_es: ingredientsEs,
     translated_at: new Date().toISOString(),

@@ -96,6 +96,7 @@ beforeEach(() => {
   delete process.env.FINCA_ID;
   delete process.env.HUB_ORIGINS;
   delete process.env.COCINA_CHAT_MODEL;
+  delete process.env.AI_MODEL;
 
   sb.getUser.mockReset().mockResolvedValue({ data: { user: { id: USER_ID } }, error: null });
   sb.rpc.mockReset().mockResolvedValue({ data: true, error: null });
@@ -282,6 +283,30 @@ describe('POST streaming', () => {
     const [params] = streamSpy.mock.calls[0] as unknown as [Anthropic.MessageStreamParams];
     expect(params.model).toBe('claude-sonnet-5-5');
     expect((params.system as Anthropic.TextBlockParam[])[0].text).toMatch(/Answer in English/);
+  });
+
+  it('uses the shared AI_MODEL when COCINA_CHAT_MODEL is not set, and COCINA_CHAT_MODEL wins over it', async () => {
+    process.env.AI_MODEL = 'claude-sonnet-5-5';
+    await (await POST(req(goodBody()))).text();
+    expect((streamSpy.mock.calls[0] as unknown as [Anthropic.MessageStreamParams])[0].model).toBe('claude-sonnet-5-5');
+
+    process.env.COCINA_CHAT_MODEL = 'claude-haiku-5-5';
+    await (await POST(req(goodBody()))).text();
+    expect((streamSpy.mock.calls[1] as unknown as [Anthropic.MessageStreamParams])[0].model).toBe('claude-haiku-5-5');
+  });
+
+  it('finds the tool call behind a thinking block', async () => {
+    useStream(['Cambié el chile. '], message({
+      stop_reason: 'tool_use',
+      content: [
+        { type: 'thinking', thinking: '', signature: 's' },
+        { type: 'text', text: 'Cambié el chile. ', citations: null },
+        { type: 'tool_use', id: 't1', name: 'propose_version', caller: { type: 'direct' },
+          input: { label: 'v2', title: 'T', ingredients: [{ item: 'a' }], steps: ['b'], why: 'c' } },
+      ],
+    } as Partial<Anthropic.Message>));
+    const events = await readSse(await POST(req(goodBody())));
+    expect(events.map(e => e.event)).toEqual(['delta', 'proposal', 'done']);
   });
 
   it('turns a propose_version tool_use block into a proposal event', async () => {

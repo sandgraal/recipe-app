@@ -5,6 +5,7 @@ import { CORS_HEADERS } from '@/lib/cors';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { isPublicHttpUrl } from '@/lib/ssrf';
 import { logger } from '@/lib/logger';
+import { extractRecipe } from '@/lib/importRecipe';
 
 function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, { ...init, headers: { ...CORS_HEADERS, ...((init?.headers as Record<string, string>) || {}) } });
@@ -139,44 +140,16 @@ export async function POST(req: NextRequest) {
     return json({ error: 'Failed to fetch URL' }, { status: 400 });
   }
 
-  const message = await client.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 2048,
-    messages: [{
-      role: 'user',
-      content: `Extract the recipe from this webpage text and return ONLY a JSON object with these exact fields (no markdown, no explanation):
-{
-  "title": string,
-  "description": string or null,
-  "servings": number or null,
-  "total_time": string or null,
-  "cuisine": string or null,
-  "tags": string[],
-  "ingredients": [{"amount": string, "unit": string, "item": string, "notes": string or null}],
-  "steps": [{"order": number, "text": string}],
-  "notes": string or null
-}
+  const result = await extractRecipe(client, 'import/url', `Extract the recipe from this webpage text. Use null for anything the page does not say. "order" counts the steps from 1.
 
 Webpage text:
-${html}`,
-    }],
-  });
+${html}`, 'Could not parse recipe');
+  if (!result.ok) return json({ error: result.error }, { status: result.status });
 
-  const text = (message.content[0] as { type: string; text: string }).text.trim();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return json({ error: 'Could not parse recipe' }, { status: 422 });
-
-  try {
-    const recipe = JSON.parse(jsonMatch[0]);
-    recipe.source_url = url;
-    recipe.source_type = 'url';
-    recipe.tags = recipe.tags || [];
-    recipe.ingredients = recipe.ingredients || [];
-    recipe.steps = recipe.steps || [];
-    if (ogImage) recipe.image_url = ogImage;
-    if (galleryImages.length > 0) recipe.gallery_images = galleryImages;
-    return json({ recipe });
-  } catch {
-    return json({ error: 'Invalid recipe JSON' }, { status: 422 });
-  }
+  const recipe = result.recipe;
+  recipe.source_url = url;
+  recipe.source_type = 'url';
+  if (ogImage) recipe.image_url = ogImage;
+  if (galleryImages.length > 0) recipe.gallery_images = galleryImages;
+  return json({ recipe });
 }
