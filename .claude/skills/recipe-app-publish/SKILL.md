@@ -40,7 +40,7 @@ python3 scripts/publish_recipe.py --update <id> patch.json      # partial update
 
 ## Where the credential comes from
 
-The script reads the admin password from the first of: env `RECIPE_ADMIN_TOKEN`, env `ADMIN_PASSWORD`, `config.json` in this skill's folder (`{"admin_token": "..."}`), `~/.config/recipe-app/token`. In Claude Code cloud sessions the network proxy can inject it instead (the user approves a credential for host `recipe-app-blush-eta.vercel.app`; then no local copy exists and `--check` still passes). Never print the token, never commit it, never put it in a recipe.
+The script reads the admin password from the first of: env `RECIPE_ADMIN_TOKEN`, env `ADMIN_PASSWORD`, `config.json` in this skill's folder (`{"admin_token": "..."}`), `~/.config/recipe-app/token`. In Claude Code cloud sessions the network proxy can inject it instead (the user approves a credential for host `recipe-app-blush-eta.vercel.app`; then no local copy exists and `--check` still passes). If a proxy overwrites the Authorization header with a different saved value and the server answers 401, the script retries once by logging in with the local token and sending the session cookie. Never print the token, never commit it, never put it in a recipe.
 
 ## Notes
 

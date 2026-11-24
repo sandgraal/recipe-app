@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { ADMIN_COOKIE } from '@/lib/authConstants';
 
 /**
  * The publish skill once told agents "no credentials are needed" after the API
@@ -31,6 +32,9 @@ describe('recipe-app-publish skill matches the server', () => {
     expect(py).toContain('RECIPE_ADMIN_TOKEN');
     expect(py).toContain('/api/auth/check');
     expect(py).toContain('"PUT"');
+    // cookie fallback for when a proxy overwrites the Authorization header
+    expect(py).toContain('/api/auth/login');
+    expect(py).toContain(`SESSION_COOKIE = "${ADMIN_COOKIE}"`);
   });
 
   it('the endpoints the script calls exist', () => {
