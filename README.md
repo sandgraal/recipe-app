@@ -118,7 +118,7 @@ One account across the family: the Finca Colibrí email + password (Supabase Aut
 2. The route verifies the token with Supabase (`auth.getUser`), then calls `rpc('finca_can_write', { p_finca_id: FINCA_ID })` **as that user**. Only admins/editors of the finca pass; non-members, read-only roles and bad tokens get 403/401 and no cookie.
 3. On success it sets the same signed httpOnly admin cookie as before (the cookie is the only session; the browser then calls `signOut({ scope: 'local' })` so no Supabase tokens stay in localStorage). Logout clears the cookie.
 
-Fallbacks, unchanged: `POST /api/auth/login` with `{ password }` (the UI has a small "Use admin password" link), and `Authorization: Bearer <ADMIN_PASSWORD>` on write routes for automation such as the recipe publish skill.
+Fallbacks, unchanged: `POST /api/auth/login` with `{ password }` (the UI has a small "Use admin password" link), and `Authorization: Bearer <ADMIN_PASSWORD>` on write routes for automation. The recipe publish skill (`.claude/skills/recipe-app-publish/`, see `CLAUDE.md`) uses the Bearer path; `GET /api/auth/check` tells a client whether its credential is accepted without writing anything.
 
 Env validation is intentionally lenient (`src/lib/env.ts`): it warns on missing/malformed values rather than crashing, so a misconfigured deploy still boots and individual features degrade gracefully.
 

@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .claude/launch.json
+
+# build output (contains the embedded admin token)
+/dist
+
+# local credential for the recipe-app-publish skill
+.claude/skills/recipe-app-publish/config.json
