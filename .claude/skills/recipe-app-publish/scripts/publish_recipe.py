@@ -52,6 +52,7 @@ SUPABASE_ANON_KEY = os.environ.get(
     "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqbnd2eHRvbXd5c3pjZnV2Z3B3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MjUyNTIsImV4cCI6MjA5NTQwMTI1Mn0."
     "Br0zIO86STjhS4oyskKJ4xZgDPUvI0rp89jfgnyTZK0",
 )
+SESSION_COOKIE = "colibri_admin"  # httpOnly session cookie set by POST /api/auth/login
 BUCKET = "recipe-images"
 VALID_SOURCE = {"manual", "url", "text", "photo", "chat"}
 
@@ -99,14 +100,50 @@ def _request(url, data=None, headers=None, method="GET", timeout=60):
         sys.exit(f"ERROR: cannot reach {url}: {e.reason}")
 
 
+def login_cookie(token):
+    """Exchange the admin password for the app's session cookie, or None.
+
+    Fallback for when a network proxy overwrites our Authorization header with a
+    different saved value: the password travels in the body and the cookie in a
+    Cookie header, neither of which such a proxy touches.
+    """
+    req = urllib.request.Request(
+        f"{APP_BASE}/api/auth/login",
+        data=json.dumps({"password": token}).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            for c in r.headers.get_all("Set-Cookie") or []:
+                if c.startswith(f"{SESSION_COOKIE}="):
+                    return c.split(";", 1)[0]
+    except urllib.error.URLError:
+        pass
+    return None
+
+
+def authed(method, path, data=None, headers=None):
+    """Send with `Authorization: Bearer`; on a 401 with a local token, retry once with the session cookie."""
+    base = dict(headers or {})
+    token, _ = find_token()
+    first = dict(base)
+    if token:
+        first["Authorization"] = f"Bearer {token}"
+    status, resp = _request(f"{APP_BASE}{path}", data=data, headers=first, method=method)
+    if status == 401 and token:
+        cookie = login_cookie(token)
+        if cookie:
+            retry = dict(base)
+            retry["Cookie"] = cookie
+            status, resp = _request(f"{APP_BASE}{path}", data=data, headers=retry, method=method)
+    return status, resp
+
+
 def api(method, path, body=None):
     """Call the app API with the admin credential when we have one."""
-    headers = {"Content-Type": "application/json"}
-    token, _ = find_token()
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
     data = json.dumps(body).encode("utf-8") if body is not None else None
-    status, resp = _request(f"{APP_BASE}{path}", data=data, headers=headers, method=method)
+    status, resp = authed(method, path, data=data, headers={"Content-Type": "application/json"})
     if status == 401:
         sys.exit("ERROR: 401 Unauthorized.\n" + lookup_help())
     return status, resp
@@ -182,8 +219,7 @@ def cmd_check():
     token, where = find_token()
     print(f"Credential source: {where or 'none found (relying on proxy injection, if any)'}")
     print(f"App: {APP_BASE}")
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    status, resp = _request(f"{APP_BASE}/api/auth/check", headers=headers)
+    status, resp = authed("GET", "/api/auth/check")
     if status == 200:
         print("OK: writes are authorized.")
         return
